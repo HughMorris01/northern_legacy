@@ -15,7 +15,11 @@ const app = express();
 
 // 3. Essential Middleware
 app.use(express.json()); // Allows us to parse JSON in request bodies
-app.use(cors()); // Prevents CORS errors when the frontend (port 5173) talks to the backend (port 5000)
+// 2. CORS: Acts as the bouncer. 
+app.use(cors({
+  origin: ['http://localhost:5173', 'https://northern-legacy.vercel.app'], 
+  credentials: true 
+})); // Prevents CORS errors when the frontend (port 5173) talks to the backend (port 5000)
 app.use(helmet()); // Sets various HTTP headers for security
 app.use(morgan('dev')); // Logs all incoming requests to your terminal for debugging
 
