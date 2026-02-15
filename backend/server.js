@@ -23,7 +23,9 @@ app.get('/', (req, res) => {
   res.send('Northern Legacy API is online and compliant.');
 });
 
-// 5. Start Server
+// ==========================================
+// 🚀 SERVER INITIALIZATION
+// ==========================================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`---`);
