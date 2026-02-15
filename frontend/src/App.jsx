@@ -1,17 +1,18 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Header from './components/Header';
 import HomeScreen from './screens/HomeScreen';
 import ProductScreen from './screens/ProductScreen';
+import CartScreen from './screens/CartScreen';
 
 const App = () => {
   return (
     <Router>
+      <Header />
       <main>
         <Routes>
-          {/* If the URL is exactly '/', show the Home Screen */}
           <Route path="/" element={<HomeScreen />} />
-          
-          {/* If the URL has an ID at the end, show the Product Screen */}
           <Route path="/product/:id" element={<ProductScreen />} />
+          <Route path="/cart" element={<CartScreen />} />nop
         </Routes>
       </main>
     </Router>

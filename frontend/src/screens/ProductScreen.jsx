@@ -1,21 +1,30 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom'; // Added useNavigate
 import axios from 'axios';
+import useCartStore from '../store/cartStore'; // Imported our new Zustand store
 
 const ProductScreen = () => {
   const [product, setProduct] = useState({});
-  // useParams looks at the URL (e.g., /product/12345) and grabs the "12345" part
-  const { id } = useParams(); 
+  const [qty, setQty] = useState(1); // State to track the dropdown quantity
+  const { id } = useParams();
+  const navigate = useNavigate(); // Used to redirect the user
+
+  // Pull the addToCart function directly from our Zustand store
+  const addToCart = useCartStore((state) => state.addToCart);
 
   useEffect(() => {
     const fetchProduct = async () => {
-      // We are hitting the second API route we built earlier!
       const { data } = await axios.get(`/api/products/${id}`);
       setProduct(data);
     };
-
     fetchProduct();
   }, [id]);
+
+  // The function that runs when the button is clicked
+  const addToCartHandler = () => {
+    addToCart(product, Number(qty));
+    navigate('/cart'); // Instantly redirect them to the cart page
+  };
 
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
@@ -29,18 +38,36 @@ const ProductScreen = () => {
         <hr />
         <p><strong>Description:</strong> {product.description}</p>
         <p><strong>THC Content:</strong> {product.thcContent}%</p>
-        <p><strong>Testing Status:</strong> {product.testingStatus}</p>
-        <p><strong>Metrc UID:</strong> <span style={{ fontFamily: 'monospace' }}>{product.metrcPackageUid}</span></p>
+        <p><strong>Weight per unit:</strong> {product.weightInOunces} oz</p>
         
         <h2>${product.price ? (product.price / 100).toFixed(2) : '0.00'}</h2>
         
-        {/* We will wire this button up to our cart logic later */}
-        <button 
-          disabled={product.stockQuantity === 0}
-          style={{ padding: '10px 20px', background: product.stockQuantity > 0 ? 'green' : 'gray', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
-        >
-          {product.stockQuantity > 0 ? 'Add to Cart' : 'Out of Stock'}
-        </button>
+        {/* Only show the quantity selector and Add to Cart button if it's in stock */}
+        {product.stockQuantity > 0 ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '15px' }}>
+            <select 
+              value={qty} 
+              onChange={(e) => setQty(e.target.value)}
+              style={{ padding: '10px', borderRadius: '5px' }}
+            >
+              {/* Create a dropdown list based on exactly how many items are in stock */}
+              {[...Array(product.stockQuantity).keys()].map((x) => (
+                <option key={x + 1} value={x + 1}>
+                  {x + 1}
+                </option>
+              ))}
+            </select>
+
+            <button 
+              onClick={addToCartHandler}
+              style={{ padding: '10px 20px', background: 'green', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+            >
+              Add to Cart
+            </button>
+          </div>
+        ) : (
+          <p style={{ color: 'red', fontWeight: 'bold', marginTop: '15px' }}>Out of Stock</p>
+        )}
       </div>
     </div>
   );
