@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
+const productRoutes = require('./routes/productRoutes');
 
 // 1. Load Environment Variables
 dotenv.config();
@@ -22,6 +23,9 @@ app.use(morgan('dev')); // Logs all incoming requests to your terminal for debug
 app.get('/', (req, res) => {
   res.send('Northern Legacy API is online and compliant.');
 });
+
+// Mount the product routes to the /api/products URL path
+app.use('/api/products', productRoutes);
 
 // ==========================================
 // 🚀 SERVER INITIALIZATION
