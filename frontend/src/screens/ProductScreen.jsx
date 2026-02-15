@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom'; // Added useNavigate
-import axios from 'axios';
+import axios from '../axios';
 import useCartStore from '../store/cartStore'; // Imported our new Zustand store
 
 const ProductScreen = () => {
