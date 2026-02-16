@@ -39,6 +39,9 @@ const VerificationScreen = () => {
             onComplete={({ inquiryId }) => { // <-- Removed status and fields
               console.log(`Verification Complete! Inquiry: ${inquiryId}`);
               setStatus('success');
+              // NEW: Instantly update the local Zustand store so they don't have to log out!
+              // (Note: Replace 'setCredentials' if your authStore uses a different name for saving user data)
+              useAuthStore.getState().setCredentials({ ...userInfo, isVerified: true });
             }}
             onCancel={() => { // <-- Removed inquiryId and sessionToken entirely
               console.log('User canceled the flow');

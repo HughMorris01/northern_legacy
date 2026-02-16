@@ -25,6 +25,7 @@ const authUser = async (req, res) => {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        isVerified: user.isVerified,
       });
     } else {
       // 401 stands for "Unauthorized"
@@ -81,6 +82,7 @@ const registerUser = async (req, res) => {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        isVerified: user.isVerified,
       });
     } else {
       res.status(400).json({ message: 'Invalid user data received' });
