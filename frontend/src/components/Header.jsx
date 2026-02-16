@@ -35,7 +35,7 @@ const Header = () => {
       
       {/* Brand Logo / Name */}
       <Link to="/" style={{ color: 'white', textDecoration: 'none', fontSize: '1.5rem', fontWeight: 'bold' }}>
-        <img width="200px" style={{borderRadius:'50%'}} src='/northern_beta_logo.jpg' />
+        <img width="100px" style={{borderRadius:'50%'}} src='/northern_beta_logo.jpg' />
       </Link>
       
       {/* Navigation Links */}
