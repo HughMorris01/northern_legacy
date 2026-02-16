@@ -45,7 +45,7 @@ const Header = () => {
           🛒 Cart
           {totalItems > 0 && (
             <span style={{ 
-              position: 'absolute', top: '-10px', right: '-16px', background: 'red', color: 'white', 
+              position: 'absolute', top: '-10px', right: '-10px', background: 'red', color: 'white', 
               borderRadius: '50%', padding: '2px 6px', fontSize: '0.75rem', fontWeight: 'bold' 
             }}>
               {totalItems}
