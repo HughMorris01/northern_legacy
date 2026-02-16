@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useCartStore from '../store/cartStore';
 import CheckoutSteps from '../components/CheckoutSteps';
-import { TAX_RATES } from '../utils/constants'; // <-- Import the new constants
+import { TAX_RATES } from '../utils/constants'; 
+import axios from '../axios'; 
 
 const PlaceOrderScreen = () => {
   const navigate = useNavigate();
@@ -10,6 +11,10 @@ const PlaceOrderScreen = () => {
   const cartItems = useCartStore((state) => state.cartItems);
   const shippingAddress = useCartStore((state) => state.shippingAddress);
   const paymentMethod = useCartStore((state) => state.paymentMethod);
+  const clearCart = useCartStore((state) => state.clearCart);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!shippingAddress.address) {
@@ -23,16 +28,37 @@ const PlaceOrderScreen = () => {
 
   const itemsPrice = cartItems.reduce((acc, item) => acc + (item.price / 100) * item.qty, 0);
   
-  // Apply the dynamic rates from constants.js
+   // Apply the dynamic rates from constants.js
   const exciseTax = itemsPrice * TAX_RATES.EXCISE; 
   const localTax = itemsPrice * TAX_RATES.LOCAL;  
   const stateTax = itemsPrice * TAX_RATES.STATE;  
   
   const totalPrice = itemsPrice + exciseTax + localTax + stateTax;
 
-  const placeOrderHandler = () => {
-    
-    console.log('Order Placed!');
+  const placeOrderHandler = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      // Send the payload to the backend
+      const { data } = await axios.post('/api/orders', {
+        orderItems: cartItems,
+        shippingAddress,
+        paymentMethod,
+        totalAmount: totalPrice,
+      });
+
+      // Clear the local cart
+      clearCart();
+      
+      // Redirect to the individual Order Details page
+      navigate(`/order/${data._id}`); 
+      
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to place order.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,6 +108,8 @@ const PlaceOrderScreen = () => {
         <div style={{ border: '1px solid #ccc', padding: '25px', borderRadius: '8px', height: 'fit-content', background: '#f9f9f9' }}>
           <h2 style={{ marginTop: 0, marginBottom: '20px', borderBottom: '2px solid #ddd', paddingBottom: '10px' }}>Order Summary</h2>
           
+          {error && <div style={{ background: '#ff4d4f', color: 'white', padding: '10px', borderRadius: '5px', marginBottom: '15px' }}>{error}</div>}
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Items:</span>
@@ -110,16 +138,16 @@ const PlaceOrderScreen = () => {
 
             <button 
               onClick={placeOrderHandler}
-              disabled={cartItems.length === 0}
+              disabled={cartItems.length === 0 || loading}
               style={{ 
                 width: '100%', padding: '15px', marginTop: '10px', 
-                background: cartItems.length === 0 ? '#ccc' : 'black', 
+                background: (cartItems.length === 0 || loading) ? '#ccc' : 'black', 
                 color: 'white', border: 'none', borderRadius: '5px', 
-                cursor: cartItems.length === 0 ? 'not-allowed' : 'pointer', 
+                cursor: (cartItems.length === 0 || loading) ? 'not-allowed' : 'pointer', 
                 fontSize: '1.1rem', fontWeight: 'bold' 
               }}
             >
-              Place Order
+              {loading ? 'Processing...' : 'Place Order'}
             </button>
           </div>
         </div>
