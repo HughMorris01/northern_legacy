@@ -28,7 +28,7 @@ const VerificationScreen = () => {
       </p>
 
       {status === 'pending' && (
-        <div style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '20px', background: '#f9f9f9', minHeight: '750px', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '20px', background: '#f9f9f9', minHeight: '850px', display: 'flex', justifyContent: 'center' }}>
           
           {/* THE EMBEDDED PERSONA SDK */}
           <PersonaReact
