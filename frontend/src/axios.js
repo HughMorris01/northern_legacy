@@ -4,9 +4,8 @@ import useCartStore from './store/cartStore';
 
 // Create the custom instance
 const instance = axios.create({
-  // THIS IS THE CRITICAL LINE THAT GOT DELETED:
-  // It tells Vercel to look at Render, while keeping localhost working normally
-  baseURL: import.meta.env.MODE === 'production' ? 'https://northern-legacy.onrender.com' : '',
+  // The empty string makes it ping Vercel in production, and localhost in development
+  baseURL: '', 
   withCredentials: true,
 });
 
