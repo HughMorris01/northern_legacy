@@ -93,13 +93,6 @@ const ProfileScreen = () => {
                 ID Expiration: {formattedExpiryDate}
               </p>
 
-              {/* Added Reference Number for Audit Trail */}
-              {userInfo.verificationRefNumber && (
-                <p style={{ margin: '5px 0 0 0', fontSize: '0.8rem', color: '#666', fontWeight: 'normal' }}>
-                  Ref #: {userInfo.verificationRefNumber}
-                </p>
-              )}
-
               {expiryStatus === 'expired' && (
                 <p style={{ margin: '10px 0 0 0', fontSize: '0.85rem', color: '#666', fontWeight: 'normal' }}>
                   Your ID has expired. Please update your verification to continue ordering.
