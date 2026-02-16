@@ -36,8 +36,8 @@ const HomeScreen = () => {
 
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-      <h1>Northern Legacy Menu</h1>
-      <h6>This application is for development purposes only, sales are not real</h6>
+      <h3>Northern Legacy Menu</h3>
+      <h6>**This application is for development purposes only, sales are not real**</h6>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '20px' }}>
         {products.map((product) => (
           <div key={product._id} style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
