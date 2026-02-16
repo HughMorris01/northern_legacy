@@ -35,7 +35,7 @@ const Header = () => {
       
       {/* Brand Logo / Name */}
       <Link to="/" style={{ color: 'white', textDecoration: 'none', fontSize: '1.5rem', fontWeight: 'bold' }}>
-        🌲 Northern Legacy
+        <img width="200px" src='././public/northern_beta_logo.jpg' />
       </Link>
       
       {/* Navigation Links */}
