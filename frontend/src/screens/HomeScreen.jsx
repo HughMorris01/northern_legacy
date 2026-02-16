@@ -39,7 +39,7 @@ const HomeScreen = () => {
       <h2>Northern Legacy Menu</h2>
       <h6>**This application is for development purposes only, sales are not real**</h6>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '20px' }}>
-        {products.map((product) => (
+        {products?.map((product) => (
           <div key={product._id} style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
             <h2>{product.name}</h2>
             <p><strong>Brand:</strong> {product.brand}</p>
