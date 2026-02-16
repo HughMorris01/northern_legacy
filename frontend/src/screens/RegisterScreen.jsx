@@ -17,7 +17,8 @@ const RegisterScreen = () => {
   const setCredentials = useAuthStore((state) => state.setCredentials);
   const userInfo = useAuthStore((state) => state.userInfo);
 
-  const redirect = location.search ? location.search.split('=')[1] : '/';
+  const urlRedirect = location.search ? location.search.split('=')[1] : '/';
+  const redirect = urlRedirect.startsWith('/') ? urlRedirect : `/${urlRedirect}`;
 
   useEffect(() => {
     if (userInfo) {

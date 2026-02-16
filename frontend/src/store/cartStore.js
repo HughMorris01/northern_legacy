@@ -5,8 +5,13 @@ const cartFromStorage = localStorage.getItem('cartItems')
   ? JSON.parse(localStorage.getItem('cartItems'))
   : [];
 
+const shippingAddressFromStorage = localStorage.getItem('shippingAddress')
+  ? JSON.parse(localStorage.getItem('shippingAddress'))
+  : {};
+
 const useCartStore = create((set, get) => ({
   cartItems: cartFromStorage,
+  shippingAddress: shippingAddressFromStorage,
 
   addToCart: (product, qty) => {
     const currentCart = get().cartItems;
@@ -45,6 +50,11 @@ const useCartStore = create((set, get) => ({
       cartItems: get().cartItems.filter((item) => item._id !== productId),
     });
     localStorage.setItem('cartItems', JSON.stringify(get().cartItems));
+  },
+
+  saveShippingAddress: (data) => {
+    set({ shippingAddress: data });
+    localStorage.setItem('shippingAddress', JSON.stringify(data));
   },
 }));
 

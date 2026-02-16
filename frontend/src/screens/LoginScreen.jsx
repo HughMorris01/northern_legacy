@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import axios from '../axios'; // Using our custom configured Axios
+import axios from '../axios'; // Using custom configured Axios
 import useAuthStore from '../store/authStore';
 
 const LoginScreen = () => {
@@ -16,7 +16,8 @@ const LoginScreen = () => {
   const userInfo = useAuthStore((state) => state.userInfo);
 
   // If they were redirected here from the cart, we want to send them back there after login
-  const redirect = location.search ? location.search.split('=')[1] : '/';
+  const urlRedirect = location.search ? location.search.split('=')[1] : '/';
+  const redirect = urlRedirect.startsWith('/') ? urlRedirect : `/${urlRedirect}`;
 
   // If the user is already logged in, push them away from the login screen
   useEffect(() => {
