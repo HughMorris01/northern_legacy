@@ -36,15 +36,16 @@ const Header = () => {
   };
 
   return (
-    <header style={{ background: '#1a1a1a', padding: '15px 30px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+   
+    <header style={{ background: '#1a1a1a', padding: '15px 30px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
       
-      {/* Brand Logo / Name */}
+      {/* Brand Logo */}
       <Link to="/" style={{ color: 'white', textDecoration: 'none', fontSize: '1.5rem', fontWeight: 'bold' }}>
-        <img width="100px" style={{borderRadius:'50%'}} src='/northern_beta_logo.jpg' />
+        <img width="100px" style={{borderRadius:'50%'}} src='/northern_beta_logo.jpg' alt="Northern Legacy" />
       </Link>
       
-      {/* Navigation Links */}
-      <nav style={{ display: 'flex', gap: '25px', alignItems: 'center' }}>
+    
+      <nav style={{ display: 'flex', gap: '25px', alignItems: 'center', flexWrap: 'wrap' }}>
         
         <Link to="/cart" style={{ color: 'white', textDecoration: 'none', fontSize: '1.1rem', position: 'relative' }}>
           🛒 Cart
