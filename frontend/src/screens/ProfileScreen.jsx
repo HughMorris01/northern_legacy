@@ -33,10 +33,10 @@ const ProfileScreen = () => {
   }, [userInfo, navigate]);
 
   // --- ID Expiration Logic Engine ---
-  let expiryStatus = 'valid'; // defaults to valid
-  let formattedExpiryDate = 'N/A';
+  let expiryStatus = 'valid'; 
+  let formattedExpiryDate = userInfo?.idExpirationDate || 'N/A';
 
-  if (userInfo?.idExpirationDate) {
+  if (userInfo?.idExpirationDate && userInfo.idExpirationDate !== 'Sandbox Mode') {
     const expiryDate = new Date(userInfo.idExpirationDate);
     formattedExpiryDate = expiryDate.toLocaleDateString();
     
@@ -48,7 +48,12 @@ const ProfileScreen = () => {
       expiryStatus = 'expired';
     } else if (expiryDate <= oneMonthFromNow) {
       expiryStatus = 'warning';
-    }
+    } else if (userInfo?.idExpirationDate === 'Sandbox Mode') {
+    expiryStatus = 'valid'; 
+    // This gives you the specific string you requested
+    formattedExpiryDate = 'Sandbox Mode, No Expiration'; 
+  }
+    
   }
 
   return (
@@ -75,7 +80,7 @@ const ProfileScreen = () => {
             )}
           </div>
 
-          {/* NEW: Expiration Display */}
+          {/* NEW: Expiration & Audit Display */}
           {userInfo.isVerified && userInfo.idExpirationDate && (
             <div style={{ 
               marginTop: '15px', padding: '15px', borderRadius: '5px', fontWeight: 'bold',
@@ -84,15 +89,26 @@ const ProfileScreen = () => {
               color: expiryStatus === 'expired' ? '#cf1322' : expiryStatus === 'warning' ? '#d48806' : '#389e0d'
             }}>
               <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {/* Conditional Icon Rendering */}
                 {expiryStatus === 'expired' ? '🛑' : expiryStatus === 'warning' ? '⚠️' : '✅'}
                 ID Expiration: {formattedExpiryDate}
               </p>
+
+              {/* Added Reference Number for Audit Trail */}
+              {userInfo.verificationRefNumber && (
+                <p style={{ margin: '5px 0 0 0', fontSize: '0.8rem', color: '#666', fontWeight: 'normal' }}>
+                  Ref #: {userInfo.verificationRefNumber}
+                </p>
+              )}
+
               {expiryStatus === 'expired' && (
-                <p style={{ margin: '5px 0 0 0', fontSize: '0.85rem', color: '#666' }}>Your ID has expired. Please update your verification to continue ordering.</p>
+                <p style={{ margin: '10px 0 0 0', fontSize: '0.85rem', color: '#666', fontWeight: 'normal' }}>
+                  Your ID has expired. Please update your verification to continue ordering.
+                </p>
               )}
               {expiryStatus === 'warning' && (
-                <p style={{ margin: '5px 0 0 0', fontSize: '0.85rem', color: '#666' }}>Your ID expires in less than 30 days. Please prepare to update it.</p>
+                <p style={{ margin: '10px 0 0 0', fontSize: '0.85rem', color: '#666', fontWeight: 'normal' }}>
+                  Your ID expires in less than 30 days. Please prepare to update it.
+                </p>
               )}
             </div>
           )}

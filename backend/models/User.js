@@ -31,13 +31,16 @@ const userSchema = new mongoose.Schema({
   },
   isVerified: {
     type: Boolean,
-    default: false
+    required: true,
+    default: false,
   },
   verificationRefNumber: {
     type: String
   },
-  idExpirationDate: { 
-    type: Date },
+  idExpirationDate: {
+    type: String, // String handles both ISO dates and our "Sandbox Mode" placeholder
+    default: null,
+  },
   // Array of timestamps for the 12-month rolling strike logic
   deliveryStrikes: [{
     type: Date

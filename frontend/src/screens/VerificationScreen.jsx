@@ -36,12 +36,16 @@ const VerificationScreen = () => {
             environment="sandbox" // MUST remain 'sandbox' during development!
             referenceId={userInfo?._id} // CRITICAL: This ties the physical ID to the MongoDB user
             onReady={() => console.log('Persona UI loaded')}
-            onComplete={({ inquiryId }) => { // <-- Removed status and fields
-              console.log(`Verification Complete! Inquiry: ${inquiryId}`);
+            onComplete={({ inquiryId }) => {
               setStatus('success');
-              // NEW: Instantly update the local Zustand store so they don't have to log out!
-              // (Note: Replace 'setCredentials' if your authStore uses a different name for saving user data)
-              useAuthStore.getState().setCredentials({ ...userInfo, isVerified: true });
+              
+              // Force the frontend state to update instantly
+              useAuthStore.getState().setCredentials({ 
+                ...userInfo, 
+                isVerified: true,
+                idExpirationDate: 'Sandbox Mode',
+                verificationRefNumber: inquiryId // Injects the ID immediately for the UI
+              });
             }}
             onCancel={() => { // <-- Removed inquiryId and sessionToken entirely
               console.log('User canceled the flow');

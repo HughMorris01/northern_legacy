@@ -26,9 +26,7 @@ const handleIdVerificationWebhook = async (req, res) => {
     }
 
     if (status === 'completed' || status === 'approved') {
-      
       const fields = inquiryAttributes.fields || {};
-      const extractedIdNumber = fields['identification-number']?.value || fields['document-number']?.value;
       const expirationDate = fields['expiration-date']?.value;
 
       // 2. The Keyboard Picture Fix
@@ -46,18 +44,16 @@ const handleIdVerificationWebhook = async (req, res) => {
       }
 
       user.isVerified = true;
-      user.idDocumentHash = hashedDocumentNumber;
+      user.verificationRefNumber = eventPayload.id; // Store the Persona Inquiry ID for audits
       
-      if (expirationDate) {
-        user.idExpirationDate = new Date(expirationDate);
-      }
+      // Update this to handle your "Sandbox Mode" or real date
+      user.idExpirationDate = expirationDate || 'Sandbox Mode';
       
       await user.save();
-
-      console.log(`User ${user.email} verified successfully.`);
+      console.log(`User ${user.email} verified. Expiry: ${user.idExpirationDate}`);
       return res.status(200).json({ message: 'User updated.' });
-      
-    } else {
+    }
+     else {
       console.log(`User ${user.email} failed verification. Status: ${status}`);
       return res.status(200).json({ message: 'Verification failed.' });
     }
