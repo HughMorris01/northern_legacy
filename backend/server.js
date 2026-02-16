@@ -17,6 +17,8 @@ connectDB();
 // Initialize App
 const app = express();
 
+app.set('trust proxy', 1);
+
 // Essential Middleware
 app.use(express.json()); // Allows us to parse JSON in request bodies
 app.use(cookieParser()); // Allows Express to read the JWT in the cookies
@@ -25,8 +27,8 @@ app.use(cookieParser()); // Allows Express to read the JWT in the cookies
 app.use(cors({
   origin: [
     'http://localhost:3000', 
-    'http://localhost:5173', // Include Vite's default port just in case
-    'https://northern-legacy.vercel.app' // <-- YOUR EXACT VERCEL URL
+    'http://localhost:5173', 
+    'https://northern-legacy.vercel.app' // 
   ],
   credentials: true, // <-- CRITICAL: Allows the secure JWT cookie to be sent
 })); // Prevents CORS errors when the frontend (port 5173 and Vercel) talks to the backend (port 5000)

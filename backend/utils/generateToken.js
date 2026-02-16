@@ -7,8 +7,8 @@ const generateToken = (res, userId) => {
 
   res.cookie('jwt', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV !== 'development',
-    sameSite: 'strict',
+    secure: process.env.NODE_ENV !== 'development', // MUST be true in production
+    sameSite: process.env.NODE_ENV !== 'development' ? 'none' : 'strict', // <-- THIS IS THE FIX
     maxAge: 30 * 60 * 1000, // <-- 30 minutes
   });
 };
