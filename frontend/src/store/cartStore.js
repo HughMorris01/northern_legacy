@@ -9,9 +9,14 @@ const shippingAddressFromStorage = localStorage.getItem('shippingAddress')
   ? JSON.parse(localStorage.getItem('shippingAddress'))
   : {};
 
+const paymentMethodFromStorage = localStorage.getItem('paymentMethod')
+  ? JSON.parse(localStorage.getItem('paymentMethod'))
+  : 'Aeropay (ACH)'; // Defaulting to the compliant digital gateway
+
 const useCartStore = create((set, get) => ({
   cartItems: cartFromStorage,
   shippingAddress: shippingAddressFromStorage,
+  paymentMethod: paymentMethodFromStorage,
 
   addToCart: (product, qty) => {
     const currentCart = get().cartItems;
@@ -55,6 +60,11 @@ const useCartStore = create((set, get) => ({
   saveShippingAddress: (data) => {
     set({ shippingAddress: data });
     localStorage.setItem('shippingAddress', JSON.stringify(data));
+  },
+
+  savePaymentMethod: (data) => {
+    set({ paymentMethod: data });
+    localStorage.setItem('paymentMethod', JSON.stringify(data));
   },
 }));
 

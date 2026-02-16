@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import useCartStore from '../store/cartStore';
+import CheckoutSteps from '../components/CheckoutSteps';
 
 const ShippingScreen = () => {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ const ShippingScreen = () => {
 
   return (
     <div style={{ maxWidth: '500px', margin: '40px auto', padding: '20px', fontFamily: 'sans-serif' }}>
+    <CheckoutSteps step1 step2 />
       <h1 style={{ textAlign: 'center', marginBottom: '30px' }}>Delivery Details</h1>
       
       <form onSubmit={submitHandler} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
