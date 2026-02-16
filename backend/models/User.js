@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -67,6 +68,30 @@ const userSchema = new mongoose.Schema({
 }, {
   // Automatically manages 'createdAt' and 'updatedAt' timestamps
   timestamps: true 
+});
+
+// ==========================================
+// 🔐 BCRYPT METHODS
+// ==========================================
+
+// Method to compare the plain text password the user types in 
+// against the scrambled hash saved in the database
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.passwordHash);
+};
+
+// Mongoose "Pre-Save" Middleware
+// Before saving a user to the database, run this code to hash the password
+userSchema.pre('save', async function (next) {
+  // If the password hasn't been modified (like if they just updated their email), skip this
+  if (!this.isModified('passwordHash')) {
+    next();
+  }
+
+  // Generate a cryptographic "salt" (random string added to the password before hashing)
+  const salt = await bcrypt.genSalt(10);
+  // Hash the password combined with the salt
+  this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
 });
 
 const User = mongoose.model('User', userSchema);
