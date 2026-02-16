@@ -64,7 +64,13 @@ const userSchema = new mongoose.Schema({
   isAnonymized: {
     type: Boolean,
     default: false
-  }
+  },
+  savedCart: [
+    {
+      product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+      qty: { type: Number, required: true }
+    }
+  ]
 }, {
   // Automatically manages 'createdAt' and 'updatedAt' timestamps
   timestamps: true 
@@ -82,10 +88,14 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 
 // Mongoose "Pre-Save" Middleware
 // Before saving a user to the database, run this code to hash the password
-userSchema.pre('save', async function (next) {
-  // If the password hasn't been modified (like if they just updated their email), skip this
+// Mongoose "Pre-Save" Middleware
+// Notice: We removed 'next' from the parentheses!
+userSchema.pre('save', async function () {
+  
+  // If the password hasn't been modified (like if they just updated their cart), 
+  // skip this entirely by returning out of the function early.
   if (!this.isModified('passwordHash')) {
-    next();
+    return; 
   }
 
   // Generate a cryptographic "salt" (random string added to the password before hashing)

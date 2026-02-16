@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { authUser, logoutUser, registerUser } = require('../controllers/userController');
+const { protect } = require('../middleware/authMiddleware');
+const { authUser, logoutUser, registerUser, saveUserCart, getUserCart } = require('../controllers/userController');
 
 // When a POST request hits /api/users/login, trigger the authUser function
 router.post('/login', authUser);
@@ -9,5 +10,8 @@ router.post('/login', authUser);
 router.post('/logout', logoutUser);
 
 router.post('/register', registerUser);
+
+// Retrieve user's cart from database on login and store to database on logout
+router.route('/cart').get(protect, getUserCart).put(protect, saveUserCart);
 
 module.exports = router;

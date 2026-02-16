@@ -71,6 +71,44 @@ const useCartStore = create((set, get) => ({
     set({ cartItems: [] });
     localStorage.removeItem('cartItems');
   },
+
+  mergeCarts: (dbCartItems) => {
+    const localCart = get().cartItems;
+    let mergedCart = [...localCart];
+
+    // Calculate current weight of the local anonymous cart
+    let currentWeight = mergedCart.reduce((total, item) => total + (item.weightInOunces * item.qty), 0);
+
+    dbCartItems.forEach((dbItem) => {
+      const existingItem = mergedCart.find((item) => item._id === dbItem._id);
+
+      if (existingItem) {
+        // If the item is in both carts, take the highest quantity to prevent double-counting
+        // (e.g., if they had 2 in DB, logged out, and added 2 anonymously, we keep it at 2, not 4)
+        const newQty = Math.max(existingItem.qty, dbItem.qty);
+        const weightDiff = (newQty - existingItem.qty) * dbItem.weightInOunces;
+
+        // Only merge if it keeps them under the 3.0 oz state limit
+        if (currentWeight + weightDiff <= LEGAL_LIMITS.MAX_OUNCES_PER_ORDER) {
+          existingItem.qty = newQty;
+          currentWeight += weightDiff;
+        }
+      } else {
+        // It's a new item from their database history, add it if legal
+        const itemWeight = dbItem.weightInOunces * dbItem.qty;
+        if (currentWeight + itemWeight <= LEGAL_LIMITS.MAX_OUNCES_PER_ORDER) {
+          mergedCart.push(dbItem);
+          currentWeight += itemWeight;
+        }
+      }
+    });
+
+    // Save the newly merged cart to Zustand and LocalStorage
+    set({ cartItems: mergedCart });
+    localStorage.setItem('cartItems', JSON.stringify(mergedCart));
+
+    return mergedCart; 
+  },
 }));
 
 export default useCartStore;

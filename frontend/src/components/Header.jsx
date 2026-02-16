@@ -9,6 +9,7 @@ const Header = () => {
   // 1. Cart State
   const cartItems = useCartStore((state) => state.cartItems);
   const totalItems = cartItems.reduce((acc, item) => acc + item.qty, 0);
+  const clearCart = useCartStore((state) => state.clearCart);
 
   // 2. Auth State
   const userInfo = useAuthStore((state) => state.userInfo);
@@ -16,17 +17,21 @@ const Header = () => {
 
   // 3. The Logout Function
   const logoutHandler = async () => {
+    // Step A: Attempt the background sync, but DON'T let it block the logout
     try {
-      // Step A: Tell the backend to destroy the secure HTTP-only cookie
+      await axios.put('/api/users/cart', { cartItems });
+    } catch (syncError) {
+      console.warn('Cart sync failed, but proceeding with logout anyway.', syncError);
+    }
+
+    // Step B: Execute the mandatory logout sequence
+    try {
       await axios.post('/api/users/logout');
-      
-      // Step B: Clear the Zustand store and localStorage on the frontend
       logout();
-      
-      // Step C: Redirect the user back to the login page
+      clearCart();
       navigate('/login');
     } catch (error) {
-      console.error('Failed to log out', error);
+      console.error('Fatal error during logout sequence', error);
     }
   };
 

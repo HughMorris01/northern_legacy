@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from '../axios'; // Using custom configured Axios
 import useAuthStore from '../store/authStore';
+import useCartStore from '../store/cartStore';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
@@ -14,6 +15,7 @@ const LoginScreen = () => {
   // Pulling our Zustand state and actions
   const setCredentials = useAuthStore((state) => state.setCredentials);
   const userInfo = useAuthStore((state) => state.userInfo);
+  const mergeCarts = useCartStore((state) => state.mergeCarts);
 
   // If they were redirected here from the cart, we want to send them back there after login
   const urlRedirect = location.search ? location.search.split('=')[1] : '/';
@@ -43,6 +45,14 @@ const LoginScreen = () => {
       // If the backend sends back a 401 Unauthorized, display the error message
       setError(err.response?.data?.message || 'Invalid email or password');
     }
+    // Fetch the user's saved cart from the database
+    const { data: dbCart } = await axios.get('/api/users/cart');
+    
+    // Merge it with any anonymous items currently in local storage
+    const mergedCart = mergeCarts(dbCart);
+    
+    // Immediately sync the newly merged cart back up to the database
+    await axios.put('/api/users/cart', { cartItems: mergedCart });
   };
 
   return (

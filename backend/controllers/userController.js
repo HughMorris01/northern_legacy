@@ -91,8 +91,60 @@ const registerUser = async (req, res) => {
   }
 };
 
+// @desc    Save user cart to database
+// @route   PUT /api/users/cart
+// @access  Private
+const saveUserCart = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (user) {
+      // req.body.cartItems comes directly from Zustand local storage
+      user.savedCart = req.body.cartItems.map((item) => ({
+        product: item._id, // Map the frontend _id to the backend product ObjectId
+        qty: item.qty
+      }));
+      await user.save();
+      res.status(200).json({ message: 'Cart synchronized' });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    console.error(`Save Cart Error: ${error.message}`);
+    res.status(500).json({ message: 'Server error saving cart' });
+  }
+};
+
+// @desc    Get user cart from database
+// @route   GET /api/users/cart
+// @access  Private
+const getUserCart = async (req, res) => {
+  try {
+    // Find the user and populate the product details so the frontend gets all the imagery/pricing
+    const user = await User.findById(req.user._id).populate('savedCart.product');
+    
+    if (user) {
+      // Reformat the database cart to perfectly match what Zustand expects
+      const formattedCart = user.savedCart
+        .filter((item) => item.product !== null) // Strip out any products that were deleted from the DB by admins
+        .map((item) => ({
+          ...item.product._doc, // Spreads the product details
+          qty: item.qty
+        }));
+
+      res.status(200).json(formattedCart);
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    console.error(`Get Cart Error: ${error.message}`);
+    res.status(500).json({ message: 'Server error fetching cart' });
+  }
+};
+
 module.exports = {
   authUser,
   logoutUser,
-  registerUser 
+  registerUser,
+  saveUserCart,
+  getUserCart 
 };
