@@ -1,78 +1,77 @@
 const mongoose = require('mongoose');
-const { LEGAL_LIMITS } = require('../utils/constants'); // <-- Add this import
 
 const orderSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    ref: 'User' // Links to the customer who placed the order
+  // Who placed the order
+  customerId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    required: true, 
+    ref: 'User' 
   },
-  // The specific items bought. We EMBED the details here so they are frozen in time.
-  orderItems: [
+  
+  // The specific items bought. Embedded here so prices and state tags are frozen in time.
+  items: [
     {
       name: { type: String, required: true },
       quantity: { type: Number, required: true },
-      price: { type: Number, required: true }, // Price in cents at the exact time of checkout
-      weightInOunces: { type: Number, required: true },
-      product: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'Product' // Links to the original SKU
-      }
+      priceAtPurchase: { type: Number, required: true }, // Price in cents at exact time of checkout
+      metrcPackageUid: { type: String, required: true }, // THE SOURCE: The blue tag for the bulk batch
+      productId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Product' },
     }
   ],
-  // --- MARITIME & LAND LOGISTICS ---
-  terrainType: {
-    type: String,
-    enum: ['Land', 'Maritime'],
-    required: true
+  
+  // Physical routing details
+  shippingAddress: {
+    address: { type: String, required: true },
+    city: { type: String, required: true },
+    postalCode: { type: String, required: true },
+    terrainType: { type: String, required: true, enum: ['Land', 'Water'] }
   },
+  paymentMethod: { type: String, required: true },
+  
+  // Strict PRD Enums
+  orderType: { 
+    type: String, 
+    required: true, 
+    enum: ['In-Store POS', 'In-Store Pickup', 'Land Delivery', 'Water Delivery'] 
+  },
+  status: { 
+    type: String, 
+    required: true, 
+    enum: ['Pending', 'Awaiting Pickup', 'Paid', 'Completed', 'Cancelled'], 
+    default: 'Pending' 
+  },
+  
+  // --- STATE COMPLIANCE (METRC) ---
+  metrcApiStatus: { 
+    type: String, 
+    enum: ['Pending', 'Success', 'Failed - Queued for Retry'], 
+    default: 'Pending' 
+  },
+  metrcSalesReceiptId: {
+    type: String // THE DESTINATION: The unique ID for this specific transaction once pushed to Metrc
+  },
+
+  // Financials
+  totalAmount: { type: Number, required: true },
+  
+  // Future implementations for the Driver App
+  handoffToken: { type: String },
+  
+  // Standard GeoJSON formatting required by MongoDB for distance math
   deliveryCoordinates: {
-    // Standard GeoJSON formatting required by MongoDB for distance math
     type: {
       type: String,
-      enum: ['Point'],
-      required: true
+      enum: ['Point']
     },
     coordinates: {
-      type: [Number], // Array of [longitude, latitude]
-      required: true
+      type: [Number] // Array of [longitude, latitude]
     }
-  },
-  deliveryDriver: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User' // Links to the employee delivering the order
-  },
-  // --- FINANCIALS & COMPLIANCE ---
-  totalPrice: {
-    type: Number,
-    required: true,
-    default: 0
-  },
-  totalWeightInOunces: {
-    type: Number,
-    required: true,
-    max: [LEGAL_LIMITS.MAX_OUNCES_PER_ORDER, 'Legal limit exceeded: Order cannot be larger than 3 ounces.']
-  },
-  paymentStatus: {
-    type: String,
-    enum: ['Pending', 'Completed', 'Failed', 'Forfeited'],
-    default: 'Pending'
-  },
-  orderStatus: {
-    type: String,
-    enum: ['Pending', 'Processing', 'Out for Delivery', 'Delivered', 'Cancelled', 'Forfeited'],
-    default: 'Pending'
-  },
-  // Required by NY OCM for outbound sales reporting
-  metrcSalesReceiptId: {
-    type: String
   }
 }, {
-  timestamps: true
+  timestamps: true // Automatically creates 'createdAt' and 'updatedAt'
 });
 
-// Creates a specialized geospatial index so MongoDB can quickly calculate delivery routes
+// Creates a specialized geospatial index so MongoDB can quickly calculate delivery routes (Haversine math)
 orderSchema.index({ deliveryCoordinates: '2dsphere' });
 
 const Order = mongoose.model('Order', orderSchema);

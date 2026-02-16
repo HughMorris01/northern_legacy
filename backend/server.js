@@ -7,6 +7,7 @@ const connectDB = require('./config/db');
 const cookieParser = require('cookie-parser');
 const productRoutes = require('./routes/productRoutes');
 const userRoutes = require('./routes/userRoutes'); 
+const orderRoutes = require('./routes/orderRoutes');
 
 // 1. Load Environment Variables
 dotenv.config();
@@ -32,9 +33,10 @@ app.get('/', (req, res) => {
   res.send('Northern Legacy API is online and compliant.');
 });
 
-// Mount the product routes to the /api/products URL path
+// Mount the routes to the /api/routes URL path
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes); 
+app.use('/api/orders', orderRoutes);
 
 // ==========================================
 // 🚀 SERVER INITIALIZATION

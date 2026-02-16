@@ -1,0 +1,84 @@
+const Order = require('../models/Order');
+
+// @desc    Create new order
+// @route   POST /api/orders
+// @access  Private (Requires Token)
+const addOrderItems = async (req, res) => {
+  try {
+    const { orderItems, shippingAddress, paymentMethod, totalAmount } = req.body;
+
+    if (orderItems && orderItems.length === 0) {
+      return res.status(400).json({ message: 'No order items' });
+    }
+
+    // 1. Map the frontend cart items to the strict backend schema
+    const itemsForDatabase = orderItems.map((item) => ({
+      name: item.name,
+      quantity: item.qty,
+      priceAtPurchase: item.price,
+      metrcPackageUid: item.metrcPackageUid,
+      productId: item._id, 
+    }));
+
+    // 2. Dynamically determine the orderType based on frontend selections
+    let determinedOrderType = 'Land Delivery';
+    if (paymentMethod === 'Pay In-Store') {
+      determinedOrderType = 'In-Store Pickup';
+    } else if (shippingAddress.terrainType === 'Water') {
+      determinedOrderType = 'Water Delivery';
+    }
+
+    // 3. Build the order object
+    const order = new Order({
+      customerId: req.user._id, // This comes securely from our authMiddleware!
+      items: itemsForDatabase,
+      shippingAddress,
+      paymentMethod,
+      orderType: determinedOrderType,
+      totalAmount,
+    });
+
+    // 4. Save to MongoDB
+    const createdOrder = await order.save();
+    
+    // 201 means "Created"
+    res.status(201).json(createdOrder);
+    
+  } catch (error) {
+    console.error(`Order Creation Error: ${error.message}`);
+    res.status(500).json({ message: 'Server error while creating order' });
+  }
+};
+
+// @desc    Get order by ID
+// @route   GET /api/orders/:id
+// @access  Private
+const getOrderById = async (req, res) => {
+  try {
+    // Find the order and attach the customer's name and email
+    const order = await Order.findById(req.params.id).populate(
+      'customerId',
+      'firstName lastName email'
+    );
+
+    if (order) {
+      // Security Check: Ensure the user requesting the order actually owns it (or is an admin)
+      // Note: We will add the strict admin check later, for now we just verify ownership
+      if (order.customerId._id.toString() === req.user._id.toString() || req.user.role === 'admin') {
+        res.status(200).json(order);
+      } else {
+        res.status(403).json({ message: 'Not authorized to view this order' });
+      }
+    } else {
+      res.status(404).json({ message: 'Order not found' });
+    }
+  } catch (error) {
+    console.error(`Fetch Order Error: ${error.message}`);
+    res.status(500).json({ message: 'Server error fetching order' });
+  }
+};
+
+module.exports = {
+  addOrderItems,
+  getOrderById,
+};
