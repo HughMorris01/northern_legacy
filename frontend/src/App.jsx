@@ -10,6 +10,7 @@ import PaymentScreen from './screens/PaymentScreen';
 import PlaceOrderScreen from './screens/PlaceOrderScreen';
 import OrderScreen from './screens/OrderScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import VerificationScreen from './screens/VerificationScreen';
 
 const App = () => {
   return (
@@ -27,6 +28,7 @@ const App = () => {
           <Route path="/placeorder" element={<PlaceOrderScreen />} />
           <Route path="/order/:id" element={<OrderScreen />} />
           <Route path="/profile" element={<ProfileScreen />} />
+          <Route path="/verify" element={<VerificationScreen />} />
         </Routes>
       </main>
     </Router>

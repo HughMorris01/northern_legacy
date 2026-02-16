@@ -36,6 +36,8 @@ const userSchema = new mongoose.Schema({
   verificationRefNumber: {
     type: String
   },
+  idExpirationDate: { 
+    type: Date },
   // Array of timestamps for the 12-month rolling strike logic
   deliveryStrikes: [{
     type: Date

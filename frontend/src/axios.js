@@ -1,21 +1,36 @@
 import axios from 'axios';
 import useAuthStore from './store/authStore';
+import useCartStore from './store/cartStore';
 
+// Create the custom instance
 const instance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '', 
-  withCredentials: true 
+  // If you have a baseURL set here, keep it! 
+  // e.g., baseURL: '' 
 });
 
-// The Interceptor: Listens to all incoming responses from the server
+// Add a response interceptor
 instance.interceptors.response.use(
-  (response) => response, // If the response is good, just pass it through
+  (response) => {
+    // Any status code that lies within the range of 2xx causes this function to trigger
+    return response;
+  },
   (error) => {
-    // If the server says 401 Unauthorized (expired or missing token)
+    // Any status codes that falls outside the range of 2xx causes this function to trigger
     if (error.response && error.response.status === 401) {
-      // Reach into Zustand store and trigger the logout action
+      // The backend rejected the token (expired or invalid)!
+      
+      // 1. Wipe the auth state
       useAuthStore.getState().logout();
-      // Optional: Force them back to the login screen
-      window.location.href = '/login';
+      
+      // 2. Wipe the cart state
+      useCartStore.getState().clearCart();
+      
+      // 3. Kick them back to the login screen
+      // Note: We use window.location here because React Router's 'useNavigate' hook 
+      // can only be used inside React Components, not inside pure JS files like this one.
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

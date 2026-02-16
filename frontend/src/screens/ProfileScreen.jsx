@@ -12,7 +12,6 @@ const ProfileScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Security Check: Kick them out if they aren't logged in
   useEffect(() => {
     if (!userInfo) {
       navigate('/login');
@@ -33,6 +32,25 @@ const ProfileScreen = () => {
     fetchMyOrders();
   }, [userInfo, navigate]);
 
+  // --- ID Expiration Logic Engine ---
+  let expiryStatus = 'valid'; // defaults to valid
+  let formattedExpiryDate = 'N/A';
+
+  if (userInfo?.idExpirationDate) {
+    const expiryDate = new Date(userInfo.idExpirationDate);
+    formattedExpiryDate = expiryDate.toLocaleDateString();
+    
+    const today = new Date();
+    const oneMonthFromNow = new Date();
+    oneMonthFromNow.setMonth(today.getMonth() + 1);
+
+    if (expiryDate < today) {
+      expiryStatus = 'expired';
+    } else if (expiryDate <= oneMonthFromNow) {
+      expiryStatus = 'warning';
+    }
+  }
+
   return (
     <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '20px', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '40px' }}>
@@ -49,7 +67,35 @@ const ProfileScreen = () => {
             <p style={{ margin: 0, fontWeight: 'bold', color: userInfo.isVerified ? 'green' : '#cf1322' }}>
               ID Verification Status: {userInfo.isVerified ? 'Verified 21+' : 'Unverified'}
             </p>
+            
+            {!userInfo.isVerified && (
+              <Link to="/verify" style={{ display: 'inline-block', marginTop: '10px', padding: '8px 16px', background: '#cf1322', color: 'white', textDecoration: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                Verify Identity Now
+              </Link>
+            )}
           </div>
+
+          {/* NEW: Expiration Display */}
+          {userInfo.isVerified && userInfo.idExpirationDate && (
+            <div style={{ 
+              marginTop: '15px', padding: '15px', borderRadius: '5px', fontWeight: 'bold',
+              background: expiryStatus === 'expired' ? '#fff1f0' : expiryStatus === 'warning' ? '#fffbe6' : '#f6ffed',
+              border: `1px solid ${expiryStatus === 'expired' ? '#ffa39e' : expiryStatus === 'warning' ? '#ffe58f' : '#b7eb8f'}`,
+              color: expiryStatus === 'expired' ? '#cf1322' : expiryStatus === 'warning' ? '#d48806' : '#389e0d'
+            }}>
+              <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* Conditional Icon Rendering */}
+                {expiryStatus === 'expired' ? '🛑' : expiryStatus === 'warning' ? '⚠️' : '✅'}
+                ID Expiration: {formattedExpiryDate}
+              </p>
+              {expiryStatus === 'expired' && (
+                <p style={{ margin: '5px 0 0 0', fontSize: '0.85rem', color: '#666' }}>Your ID has expired. Please update your verification to continue ordering.</p>
+              )}
+              {expiryStatus === 'warning' && (
+                <p style={{ margin: '5px 0 0 0', fontSize: '0.85rem', color: '#666' }}>Your ID expires in less than 30 days. Please prepare to update it.</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* RIGHT COLUMN: Order History */}
