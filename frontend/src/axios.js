@@ -7,6 +7,7 @@ const instance = axios.create({
   // THIS IS THE CRITICAL LINE THAT GOT DELETED:
   // It tells Vercel to look at Render, while keeping localhost working normally
   baseURL: import.meta.env.MODE === 'production' ? 'https://northern-legacy.onrender.com' : '',
+  withCredentials: true,
 });
 
 // Add a response interceptor

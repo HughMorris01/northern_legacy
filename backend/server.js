@@ -10,26 +10,29 @@ const productRoutes = require('./routes/productRoutes');
 const userRoutes = require('./routes/userRoutes'); 
 const orderRoutes = require('./routes/orderRoutes');
 
-// 1. Load Environment Variables
+// Load Environment Variables
 dotenv.config();
 connectDB();
 
-// 2. Initialize App
+// Initialize App
 const app = express();
 
-// 3. Essential Middleware
+// Essential Middleware
 app.use(express.json()); // Allows us to parse JSON in request bodies
 app.use(cookieParser()); // Allows Express to read the JWT in the cookies
 
-// 2. CORS: Acts as the bouncer. 
+// CORS: Acts as the bouncer. 
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://northern-legacy.vercel.app'], 
-  credentials: true 
+  origin: [
+    'http://localhost:3000', 
+    'http://localhost:5173', // Include Vite's default port just in case
+    'https://northern-legacy.vercel.app' // <-- YOUR EXACT VERCEL URL
+  ],
+  credentials: true, // <-- CRITICAL: Allows the secure JWT cookie to be sent
 })); // Prevents CORS errors when the frontend (port 5173 and Vercel) talks to the backend (port 5000)
 app.use(helmet()); // Sets various HTTP headers for security
 app.use(morgan('dev')); // Logs all incoming requests to your terminal for debugging
 
-// 4. Basic "Heartbeat" Route
 app.get('/', (req, res) => {
   res.send('Northern Legacy API is online and compliant.');
 });
