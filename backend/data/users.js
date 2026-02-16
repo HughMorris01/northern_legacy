@@ -1,9 +1,15 @@
+const bcrypt = require('bcryptjs');
+
+// We use bcrypt.hashSync to instantly scramble a simple password ('123456') 
+// so we can use it for all our test accounts without typing the hash manually.
+const defaultPassword = bcrypt.hashSync('123456', 10);
+
 const users = [
   {
     firstName: 'Admin',
     lastName: 'User',
     email: 'admin@northernlegacy.com',
-    passwordHash: 'fake_hashed_password_123', // We will add real bcrypt hashing later
+    passwordHash: defaultPassword,
     role: 'admin',
     isVerified: true
   },
@@ -11,7 +17,7 @@ const users = [
     firstName: 'Boat',
     lastName: 'Captain',
     email: 'driver@northernlegacy.com',
-    passwordHash: 'fake_hashed_password_456',
+    passwordHash: defaultPassword,
     role: 'driver',
     isVerified: true
   },
@@ -19,7 +25,7 @@ const users = [
     firstName: 'John',
     lastName: 'Doe',
     email: 'john@example.com',
-    passwordHash: 'fake_hashed_password_789',
+    passwordHash: defaultPassword,
     role: 'customer'
   }
 ];

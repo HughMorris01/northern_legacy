@@ -4,7 +4,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
+const cookieParser = require('cookie-parser');
 const productRoutes = require('./routes/productRoutes');
+const userRoutes = require('./routes/userRoutes'); 
 
 // 1. Load Environment Variables
 dotenv.config();
@@ -15,6 +17,8 @@ const app = express();
 
 // 3. Essential Middleware
 app.use(express.json()); // Allows us to parse JSON in request bodies
+app.use(cookieParser()); // Allows Express to read the JWT in the cookies
+
 // 2. CORS: Acts as the bouncer. 
 app.use(cors({
   origin: ['http://localhost:5173', 'https://northern-legacy.vercel.app'], 
@@ -30,6 +34,7 @@ app.get('/', (req, res) => {
 
 // Mount the product routes to the /api/products URL path
 app.use('/api/products', productRoutes);
+app.use('/api/users', userRoutes); 
 
 // ==========================================
 // 🚀 SERVER INITIALIZATION
