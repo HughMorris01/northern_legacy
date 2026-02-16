@@ -66,6 +66,11 @@ const useCartStore = create((set, get) => ({
     set({ paymentMethod: data });
     localStorage.setItem('paymentMethod', JSON.stringify(data));
   },
+
+  clearCart: () => {
+    set({ cartItems: [] });
+    localStorage.removeItem('cartItems');
+  },
 }));
 
 export default useCartStore;

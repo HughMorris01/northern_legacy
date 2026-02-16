@@ -31,7 +31,7 @@ const PlaceOrderScreen = () => {
   const totalPrice = itemsPrice + exciseTax + localTax + stateTax;
 
   const placeOrderHandler = () => {
-    // We will wire this up to the backend next!
+    
     console.log('Order Placed!');
   };
 

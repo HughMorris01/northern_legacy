@@ -78,7 +78,22 @@ const getOrderById = async (req, res) => {
   }
 };
 
+// @desc    Get logged in user orders
+// @route   GET /api/orders/myorders
+// @access  Private
+const getMyOrders = async (req, res) => {
+  try {
+    // Find all orders matching this user's ID
+    const orders = await Order.find({ customerId: req.user._id });
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error(`Fetch My Orders Error: ${error.message}`);
+    res.status(500).json({ message: 'Server error fetching user orders' });
+  }
+};
+
 module.exports = {
   addOrderItems,
   getOrderById,
+  getMyOrders,
 };

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from '../axios';
 import Loader from '../components/Loader';
+import QRCode from 'react-qr-code';
 
 const OrderScreen = () => {
   const { id: orderId } = useParams(); // Grabs the ID right out of the URL
@@ -85,12 +86,17 @@ const OrderScreen = () => {
             <div style={{ border: '2px dashed #333', padding: '25px', borderRadius: '8px', background: '#f9f9f9', textAlign: 'center', marginBottom: '30px' }}>
               <h2 style={{ marginTop: 0, marginBottom: '10px' }}>Delivery Handoff Token</h2>
               <p style={{ color: 'gray', fontSize: '0.9rem', marginBottom: '20px' }}>
-                You must present this token and your physical ID to the driver to release your inventory.
+                You must present this QR code and your physical ID to the driver to release your inventory.
               </p>
               
-              <div style={{ background: 'black', color: 'white', padding: '20px', fontSize: '1.2rem', fontFamily: 'monospace', letterSpacing: '2px', borderRadius: '5px' }}>
-                {order._id.substring(order._id.length - 8).toUpperCase()}
+              {/* The dynamic QR Code rendering the Order ID */}
+              <div style={{ background: 'white', padding: '16px', display: 'inline-block', borderRadius: '8px', border: '1px solid #ddd' }}>
+                <QRCode value={order._id} size={180} />
               </div>
+              
+              <p style={{ marginTop: '15px', fontFamily: 'monospace', letterSpacing: '2px', color: '#666' }}>
+                ID: {order._id.substring(order._id.length - 8).toUpperCase()}
+              </p>
             </div>
           )}
 
@@ -102,7 +108,6 @@ const OrderScreen = () => {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

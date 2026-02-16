@@ -56,9 +56,9 @@ const Header = () => {
         {/* Dynamic Auth Links: The Bouncer Logic */}
         {userInfo ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <span style={{ fontSize: '1.1rem' }}>
+            <Link to="/profile" style={{ color: 'white', textDecoration: 'none', fontSize: '1.1rem' }}>
               Hello, <strong>{userInfo.firstName}</strong>
-            </span>
+            </Link>
             <button 
               onClick={logoutHandler}
               style={{ background: 'transparent', color: '#ff4d4f', border: '1px solid #ff4d4f', padding: '5px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '1rem' }}
