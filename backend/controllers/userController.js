@@ -49,7 +49,50 @@ const logoutUser = async (req, res) => {
   res.status(200).json({ message: 'Logged out successfully' });
 };
 
+// @desc    Register a new user
+// @route   POST /api/users
+// @access  Public
+const registerUser = async (req, res) => {
+  try {
+    const { firstName, lastName, email, password } = req.body;
+
+    // 1. Check if the email is already in use
+    const userExists = await User.findOne({ email });
+
+    if (userExists) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    // 2. Create the user (our Mongoose pre-save middleware will automatically hash the password!)
+    const user = await User.create({
+      firstName,
+      lastName,
+      email,
+      passwordHash: password, // We map the plain text password to our schema's field name
+    });
+
+    // 3. If successfully created, generate the token and send back the data
+    if (user) {
+      generateToken(res, user._id);
+      
+      res.status(201).json({
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+      });
+    } else {
+      res.status(400).json({ message: 'Invalid user data received' });
+    }
+  } catch (error) {
+    console.error(`Registration Error: ${error.message}`);
+    res.status(500).json({ message: 'Server error during registration' });
+  }
+};
+
 module.exports = {
   authUser,
-  logoutUser
+  logoutUser,
+  registerUser 
 };

@@ -1,8 +1,12 @@
 import { create } from 'zustand';
 import { LEGAL_LIMITS } from '../utils/constants'; 
 
+const cartFromStorage = localStorage.getItem('cartItems')
+  ? JSON.parse(localStorage.getItem('cartItems'))
+  : [];
+
 const useCartStore = create((set, get) => ({
-  cartItems: [],
+  cartItems: cartFromStorage,
 
   addToCart: (product, qty) => {
     const currentCart = get().cartItems;
@@ -32,6 +36,7 @@ const useCartStore = create((set, get) => ({
       // If it's a new item, add it to the array
       set({ cartItems: [...currentCart, { ...product, qty }] });
     }
+    localStorage.setItem('cartItems', JSON.stringify(get().cartItems));
   },
 
   // Action: Remove an item entirely
@@ -39,6 +44,7 @@ const useCartStore = create((set, get) => ({
     set({
       cartItems: get().cartItems.filter((item) => item._id !== productId),
     });
+    localStorage.setItem('cartItems', JSON.stringify(get().cartItems));
   },
 }));
 

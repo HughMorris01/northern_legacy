@@ -1,12 +1,14 @@
 import { Link, useNavigate } from 'react-router-dom';
 import useCartStore from '../store/cartStore';
 
+
 const CartScreen = () => {
   const navigate = useNavigate();
   
   // Pull our state and actions from Zustand
   const cartItems = useCartStore((state) => state.cartItems);
   const removeFromCart = useCartStore((state) => state.removeFromCart);
+  const addToCart = useCartStore((state) => state.addToCart);
 
   // Calculate the running totals dynamically
   const totalItems = cartItems.reduce((acc, item) => acc + item.qty, 0);
@@ -42,7 +44,26 @@ const CartScreen = () => {
                   </Link>
                 </div>
                 <div style={{ flex: 1 }}>${(totalPrice / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                <div style={{ flex: 1 }}>Qty: {item.qty}</div>
+                {/* Interactive Quantity Controls */}
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button 
+                    onClick={() => addToCart(item, -1)}
+                    disabled={item.qty <= 1}
+                    style={{ padding: '5px 10px', cursor: item.qty <= 1 ? 'not-allowed' : 'pointer' }}
+                  >
+                    -
+                  </button>
+                  
+                  <span style={{ fontWeight: 'bold' }}>{item.qty}</span>
+                  
+                  <button 
+                    onClick={() => addToCart(item, 1)}
+                    disabled={item.qty >= item.stockQuantity}
+                    style={{ padding: '5px 10px', cursor: item.qty >= item.stockQuantity ? 'not-allowed' : 'pointer' }}
+                  >
+                    +
+                  </button>
+                </div>
                 {/* We show the weight line item to prove the math is working */}
                 <div style={{ flex: 1, fontSize: '0.9em', color: 'gray' }}>{(item.weightInOunces * item.qty).toFixed(3)} oz</div>
                 <div>
