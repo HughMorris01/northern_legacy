@@ -1,21 +1,23 @@
 import { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom'; // <-- Added useLocation
 import axios from '../axios';
-import { Link } from 'react-router-dom';
 import Loader from '../components/Loader';
 
 const HomeScreen = () => {
-  // 1. Set up the state to hold our data
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true); // <-- Start loading as true
+  const [loading, setLoading] = useState(true); 
   const [error, setError] = useState('');
+  
+  // Pull the location state to check for a security logout message
+  const location = useLocation();
+  const message = location.state?.message;
 
-  // 2. Use useEffect to fire the API call as soon as the screen loads
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const { data } = await axios.get('/api/products');
         setProducts(data);
-        setLoading(false); // <-- Turn off loader when data arrives
+        setLoading(false); 
       } catch {
         setError('Failed to fetch products from the server.');
         setLoading(false);
@@ -24,18 +26,24 @@ const HomeScreen = () => {
     fetchProducts();
   }, []);
 
-  // If loading is true, show our custom tree animation instead of the grid
-  if (loading) {
-    return <Loader />;
-  }
+  if (loading) return <Loader />;
 
-  // If the server threw a real error, show it
-  if (error) {
-    return <div style={{ color: 'red', textAlign: 'center', marginTop: '50px' }}><h2>{error}</h2></div>;
-  }
+  if (error) return <div style={{ color: 'red', textAlign: 'center', marginTop: '50px' }}><h2>{error}</h2></div>;
 
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
+      
+      {/* THE SECURITY BANNER */}
+      {message && (
+        <div style={{ 
+          background: '#fff2f0', border: '1px solid #ffccc7', color: '#ff4d4f',
+          padding: '12px', textAlign: 'center', marginBottom: '20px', borderRadius: '4px',
+          fontWeight: 'bold', fontSize: '1rem' 
+        }}>
+          ⚠️ {message}
+        </div>
+      )}
+
       <h2>Northern Legacy Menu</h2>
       <h6>**This application is for development purposes only, sales are not real**</h6>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '20px' }}>
