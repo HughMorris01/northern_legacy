@@ -1,17 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // 1. Import useEffect
 import { useNavigate } from 'react-router-dom';
 import CheckoutSteps from '../components/CheckoutSteps';
-import useCartStore from '../store/cartStore'; 
+import useCartStore from '../store/cartStore';
 
 const OrderTypeScreen = () => {
-  const [orderType, setOrderType] = useState('Delivery'); 
+  const [orderType, setOrderType] = useState(''); 
   const navigate = useNavigate();
 
-  const saveShippingAddress = useCartStore((state) => state.saveShippingAddress);
-  // Bring in the current state to check for stale cache
   const shippingAddress = useCartStore((state) => state.shippingAddress);
+  const saveShippingAddress = useCartStore((state) => state.saveShippingAddress);
 
- const submitHandler = (e) => {
+  // 2. THE FIX: Wipe any stale cache the moment the screen loads
+  useEffect(() => {
+    if (shippingAddress?.address === 'In-Store Pickup') {
+      saveShippingAddress({ address: '', city: '', postalCode: '', country: 'USA', terrainType: '' });
+    }
+  }, [shippingAddress.address, saveShippingAddress]);
+
+  const submitHandler = (e) => {
     e.preventDefault();
     
     if (orderType === 'Pickup') {
