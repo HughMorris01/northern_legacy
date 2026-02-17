@@ -7,11 +7,11 @@ const addOrderItems = async (req, res) => {
   try {
     const { orderItems, shippingAddress, paymentMethod, totalAmount } = req.body;
 
-    if (orderItems && orderItems.length === 0) {
+    // FIX 1: Properly catch undefined or empty carts
+    if (!orderItems || orderItems.length === 0) {
       return res.status(400).json({ message: 'No order items' });
     }
 
-    // 1. Map the frontend cart items to the strict backend schema
     const itemsForDatabase = orderItems.map((item) => ({
       name: item.name,
       quantity: item.qty,
@@ -20,17 +20,17 @@ const addOrderItems = async (req, res) => {
       productId: item._id, 
     }));
 
-    // 2. Dynamically determine the orderType based on frontend selections
     let determinedOrderType = 'Land Delivery';
     if (paymentMethod === 'Pay In-Store') {
       determinedOrderType = 'In-Store Pickup';
-    } else if (shippingAddress.terrainType === 'Water') {
+      
+    // FIX 2: Optional Chaining (?.) prevents a crash if shippingAddress is undefined
+    } else if (shippingAddress?.terrainType === 'Water') {
       determinedOrderType = 'Water Delivery';
     }
 
-    // 3. Build the order object
     const order = new Order({
-      customerId: req.user._id, // This comes securely from our authMiddleware!
+      customerId: req.user._id, 
       items: itemsForDatabase,
       shippingAddress,
       paymentMethod,
@@ -38,10 +38,7 @@ const addOrderItems = async (req, res) => {
       totalAmount,
     });
 
-    // 4. Save to MongoDB
     const createdOrder = await order.save();
-    
-    // 201 means "Created"
     res.status(201).json(createdOrder);
     
   } catch (error) {

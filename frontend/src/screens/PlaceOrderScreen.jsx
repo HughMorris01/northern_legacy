@@ -63,7 +63,7 @@ const PlaceOrderScreen = () => {
 
   return (
     <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '20px', fontFamily: 'sans-serif' }}>
-      <CheckoutSteps step1 step2 step3 step4 />
+      <CheckoutSteps step1 step2 step3 step4 step5 />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '40px', marginTop: '30px' }}>
         

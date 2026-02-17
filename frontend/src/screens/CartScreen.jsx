@@ -1,23 +1,33 @@
 import { Link, useNavigate } from 'react-router-dom';
 import useCartStore from '../store/cartStore';
-
+import useAuthStore from '../store/authStore'; // 1. ADD THIS IMPORT
 
 const CartScreen = () => {
   const navigate = useNavigate();
   
-  // Pull our state and actions from Zustand
+  // 2. INITIALIZE USER INFO
+  const userInfo = useAuthStore((state) => state.userInfo);
+  
   const cartItems = useCartStore((state) => state.cartItems);
   const removeFromCart = useCartStore((state) => state.removeFromCart);
   const addToCart = useCartStore((state) => state.addToCart);
 
-  // Calculate the running totals dynamically
   const totalItems = cartItems.reduce((acc, item) => acc + item.qty, 0);
   const totalPrice = cartItems.reduce((acc, item) => acc + item.qty * item.price, 0);
   const totalWeight = cartItems.reduce((acc, item) => acc + item.qty * item.weightInOunces, 0);
 
+  // 3. UPDATED CHECKOUT HANDLER
   const checkoutHandler = () => {
-    // This will eventually route to a login or shipping page
-    navigate('/login?redirect=shipping');
+    if (!userInfo) {
+      // Not logged in? Go to login first
+      navigate('/login?redirect=/order-type');
+    } else if (!userInfo.isVerified) {
+      // Logged in but unverified? Go to Persona flow
+      navigate('/verify?redirect=/order-type');
+    } else {
+      // All clear! Proceed to the new Order Type screen
+      navigate('/order-type');
+    }
   };
 
   return (
@@ -43,7 +53,7 @@ const CartScreen = () => {
                     {item.name}
                   </Link>
                 </div>
-                <div style={{ flex: 1 }}>${(totalPrice / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div style={{ flex: 1 }}>${(item.price / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 {/* Interactive Quantity Controls */}
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <button 

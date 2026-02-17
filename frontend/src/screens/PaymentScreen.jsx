@@ -28,7 +28,7 @@ const PaymentScreen = () => {
 
   return (
     <div style={{ maxWidth: '500px', margin: '40px auto', padding: '20px', fontFamily: 'sans-serif' }}>
-      <CheckoutSteps step1 step2 step3 /> 
+      <CheckoutSteps step1 step2 step3 step4 /> 
       
       <h1 style={{ textAlign: 'center', marginBottom: '30px' }}>Payment Method</h1>
       

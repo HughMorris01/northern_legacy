@@ -84,7 +84,6 @@ const ProfileScreen = () => {
           {userInfo.isVerified && userInfo.idExpirationDate && (
             <div style={{ 
               marginTop: '15px', padding: '15px', borderRadius: '5px', fontWeight: 'bold',
-              border: `1px solid ${expiryStatus === 'expired' ? '#ffa39e' : expiryStatus === 'warning' ? '#ffe58f' : '#b7eb8f'}`,
               color: expiryStatus === 'expired' ? '#cf1322' : expiryStatus === 'warning' ? '#d48806' : '#090909'
             }}>
               <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>

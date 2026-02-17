@@ -1,57 +1,54 @@
 import { Link } from 'react-router-dom';
+import useCartStore from '../store/cartStore'; 
 
-const CheckoutSteps = ({ step1, step2, step3, step4 }) => {
-  // Developer Note: Inline styles used for rapid prototyping
-  const activeStyle = { 
-    padding: '10px 15px', 
-    fontWeight: 'bold', 
-    color: 'black', 
-    textDecoration: 'none',
-    borderBottom: '3px solid green'
-  };
-  
-  const disabledStyle = { 
-    padding: '10px 15px', 
-    fontWeight: 'bold', 
-    color: '#ccc', 
-    textDecoration: 'none',
-    cursor: 'not-allowed'
+const CheckoutSteps = ({ step1, step2, step3, step4, step5 }) => {
+  const shippingAddress = useCartStore((state) => state.shippingAddress);
+  const isPickup = shippingAddress?.address === 'In-Store Pickup';
+
+  // 3-Color Logic Engine
+  // Dark Green = Completed, Light Green = Active, Gray = Future/Skipped
+  const getStepStyle = (isCurrentProp, isNextProp) => {
+    if (isCurrentProp && isNextProp) {
+      return { borderBottom: '4px solid #1e8449', color: 'black' }; 
+    }
+    if (isCurrentProp && !isNextProp) {
+      return { borderBottom: '4px solid #2ecc71', color: 'black' }; 
+    }
+    return { borderBottom: '4px solid #ddd', color: '#999' }; 
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '30px', flexWrap: 'wrap' }}>
+    <nav style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px', marginBottom: '30px', textAlign: 'center', fontSize: '0.7rem', fontWeight: 'bold' }}>
       
-      {step1 ? (
-        <Link to="/login" style={activeStyle}>Sign In</Link>
-      ) : (
-        <span style={disabledStyle}>Sign In</span>
-      )}
+      <div style={{ ...getStepStyle(step1, step2), paddingBottom: '5px' }}>
+        {step1 ? <Link to='/login' style={{color: 'inherit', textDecoration: 'none'}}>LOGIN</Link> : 'LOGIN'}
+      </div>
+      
+      {/* If pickup, the next step after TYPE is PAY (step4) */}
+      <div style={{ ...getStepStyle(step2, isPickup ? step4 : step3), paddingBottom: '5px' }}>
+        {step2 ? <Link to='/order-type' style={{color: 'inherit', textDecoration: 'none'}}>TYPE</Link> : 'TYPE'}
+      </div>
+      
+      {/* THE FIX: If isPickup is true, force getStepStyle to evaluate as false (Gray) */}
+      <div style={{ ...(isPickup ? getStepStyle(false, false) : getStepStyle(step3, step4)), paddingBottom: '5px', opacity: isPickup ? 0.4 : 1 }}>
+        {isPickup ? (
+          <span style={{ textDecoration: 'line-through', color: '#999' }}>SHIP</span>
+        ) : step3 ? (
+          <Link to='/shipping' style={{color: 'inherit', textDecoration: 'none'}}>SHIP</Link>
+        ) : (
+          'SHIP'
+        )}
+      </div>
 
-      <span style={{ padding: '10px 0', color: '#ccc' }}>&rarr;</span>
+      <div style={{ ...getStepStyle(step4, step5), paddingBottom: '5px' }}>
+        {step4 ? <Link to='/payment' style={{color: 'inherit', textDecoration: 'none'}}>PAY</Link> : 'PAY'}
+      </div>
+      
+      <div style={{ ...getStepStyle(step5, false), paddingBottom: '5px' }}>
+        {step5 ? <Link to='/placeorder' style={{color: 'inherit', textDecoration: 'none'}}>PLACE</Link> : 'PLACE'}
+      </div>
 
-      {step2 ? (
-        <Link to="/shipping" style={activeStyle}>Shipping</Link>
-      ) : (
-        <span style={disabledStyle}>Shipping</span>
-      )}
-
-      <span style={{ padding: '10px 0', color: '#ccc' }}>&rarr;</span>
-
-      {step3 ? (
-        <Link to="/payment" style={activeStyle}>Payment</Link>
-      ) : (
-        <span style={disabledStyle}>Payment</span>
-      )}
-
-      <span style={{ padding: '10px 0', color: '#ccc' }}>&rarr;</span>
-
-      {step4 ? (
-        <Link to="/placeorder" style={activeStyle}>Place Order</Link>
-      ) : (
-        <span style={disabledStyle}>Place Order</span>
-      )}
-
-    </div>
+    </nav>
   );
 };
 

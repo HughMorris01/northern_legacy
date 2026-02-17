@@ -14,15 +14,25 @@ mongoose.connect(process.env.MONGO_URI);
 
 const importData = async () => {
   try {
-    // 1. Wipe the database completely clean to prevent duplicates
+    // Wipe the orders and products
     await Order.deleteMany();
     await Product.deleteMany();
-    await User.deleteMany();
 
-    // 2. Insert the dummy users
+    // Obliterate the Users collection AND its broken ghost indexes
+    try {
+      await User.collection.drop();
+      console.log('Old user indexes destroyed.');
+    } catch (error) {
+      // It's perfectly fine if the collection doesn't exist yet
+    }
+
+    // Force Mongoose to read your User.js file and build the new, correct 'sparse' indexes
+    await User.createIndexes();
+
+    // 4. Insert the dummy users
     await User.insertMany(users);
     
-    // 3. Insert the dummy products
+    // 5. Insert the dummy products
     await Product.insertMany(products);
 
     console.log('✅ Northern Legacy Database Seeded!');

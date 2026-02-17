@@ -20,6 +20,9 @@ const VerificationScreen = () => {
     }
   }, [userInfo, navigate]);
 
+  const queryParams = new URLSearchParams(window.location.search);
+  const redirect = queryParams.get('redirect') || '/profile';
+
   return (
     <div style={{ maxWidth: '800px', margin: '40px auto', padding: '20px', textAlign: 'center', fontFamily: 'sans-serif' }}>
       <h1 style={{ marginBottom: '10px' }}>Verify Your Identity</h1>
@@ -71,7 +74,7 @@ const VerificationScreen = () => {
             onClick={() => navigate('/profile')}
             style={{ padding: '12px 24px', background: 'black', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold' }}
           >
-            Return to Profile
+          {redirect === '/profile' ? 'Return to Profile' : 'Continue to Checkout'}
           </button>
         </div>
       )}
