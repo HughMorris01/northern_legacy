@@ -7,6 +7,7 @@ import Loader from '../components/Loader';
 const ProfileScreen = () => {
   const navigate = useNavigate();
   const userInfo = useAuthStore((state) => state.userInfo);
+  const logout = useAuthStore((state) => state.logout);
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +32,24 @@ const ProfileScreen = () => {
 
     fetchMyOrders();
   }, [userInfo, navigate]);
+
+  const deleteAccountHandler = async () => {
+    if (window.confirm('Are you absolutely sure? This will permanently close your account and anonymize your data. This action cannot be undone.')) {
+      try {
+        // 1. Hit the new backend route
+        await axios.delete('/api/users/profile');
+        
+        // 2. Clear the Zustand auth store and local storage
+        logout(); 
+        
+        // 3. Boot them back to the login screen
+        navigate('/login');
+      } catch (err) {
+        console.error(err);
+        alert(err.response?.data?.message || 'Failed to delete account');
+      }
+    }
+  };
 
   // --- ID Expiration Logic Engine ---
   let expiryStatus = 'valid'; 
@@ -103,6 +122,18 @@ const ProfileScreen = () => {
               )}
             </div>
           )}
+          <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '2px solid #ff4d4f' }}>
+            <h3 style={{ color: '#ff4d4f', marginBottom: '10px' }}>Danger Zone</h3>
+            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '15px' }}>
+              Once you delete your account, there is no going back. Please be certain.
+            </p>
+            <button 
+              onClick={deleteAccountHandler}
+              style={{ padding: '10px 20px', background: 'white', color: '#ff4d4f', border: '2px solid #ff4d4f', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              Delete Account
+            </button>
+          </div>
         </div>
 
         {/* RIGHT COLUMN: Order History */}

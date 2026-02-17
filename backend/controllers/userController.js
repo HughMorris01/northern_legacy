@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
+const bcrypt = require('bcryptjs');
 
 // @desc    Auth user & get token
 // @route   POST /api/users/login
@@ -147,10 +148,55 @@ const getUserCart = async (req, res) => {
   }
 };
 
+// @desc    Delete user account (Anonymize data)
+// @route   DELETE /api/users/profile
+// @access  Private
+const deleteAccount = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+      // 1. Anonymize personal identifiers
+      user.firstName = 'Deleted';
+      user.lastName = 'User';
+      // We attach their ID to the email so MongoDB doesn't throw a "Duplicate Email" error 
+      // if multiple people delete their accounts
+      user.email = `deleted_${user._id}@anonymized.com`; 
+      
+      // 2. Scramble the password so the account can never be logged into again
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(Date.now().toString(), salt);
+
+      // 3. Wipe all sensitive compliance and Persona data
+      user.idDocumentHash = undefined;
+      user.verificationRefNumber = undefined;
+      user.idExpirationDate = undefined;
+      user.isVerified = false;
+      user.savedCart = [];
+
+      await user.save();
+
+      // 4. Destroy their auth cookie to instantly log them out
+      res.cookie('jwt', '', {
+        httpOnly: true,
+        expires: new Date(0),
+      });
+
+      res.status(200).json({ message: 'User account successfully anonymized and closed.' });
+    } else {
+      res.status(404).json({ message: 'User not found.' });
+    }
+  } catch (error) {
+    console.error(`Delete Account Error: ${error.message}`);
+    res.status(500).json({ message: 'Server error during account deletion.' });
+  }
+};
+
 module.exports = {
   authUser,
   logoutUser,
   registerUser,
   saveUserCart,
-  getUserCart 
+  getUserCart,
+  deleteAccount 
 };
