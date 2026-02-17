@@ -14,7 +14,20 @@ const protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // 3. Find the user in the database, but explicitly EXCLUDE the hashed password
-      req.user = await User.findById(decoded.userId).select('-passwordHash');
+      req.user = await User.findById(decoded.userId).select('-password');
+
+      // NEW FIX: The Ghost Blocker. Reject the token if the account was soft-deleted!
+      if (!req.user || req.user.email.includes('@anonymized.com')) {
+        res.status(401);
+        throw new Error('Not authorized, account disabled');
+      }
+
+      // NEW FIX: The "One Device" Check
+      // If the cookie's token doesn't match the database token, someone else logged in!
+      if (req.user.sessionToken !== decoded.sessionToken) {
+        res.status(401);
+        throw new Error('Session expired. You logged in on another device.');
+      }
 
       // 4. Move on to the actual controller function
       next();

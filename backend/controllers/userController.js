@@ -1,25 +1,28 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 // @desc    Auth user & get token
 // @route   POST /api/users/login
 // @access  Public
 const authUser = async (req, res) => {
   try {
-    // 1. Grab the email and password the user typed into the frontend
     const { email, password } = req.body;
-
-    // 2. Look for a user in the database with that exact email
     const user = await User.findOne({ email });
 
-    // 3. If the user exists AND the password matches the hashed password
     if (user && (await user.matchPassword(password))) {
       
-      // Generate the JWT and put it in the httpOnly cookie
-      generateToken(res, user._id);
+      // 1. Generate a random 40-character session string
+      const currentSessionToken = crypto.randomBytes(20).toString('hex');
+      
+      // 2. Save it to the database (This invalidates any previous session strings!)
+      user.sessionToken = currentSessionToken;
+      await user.save();
 
-      // Send the user's basic info back to the React frontend (DO NOT send the password!)
+      // 3. Pass BOTH the ID and the new session string to the cookie generator
+      generateToken(res, user._id, currentSessionToken);
+
       res.json({
         _id: user._id,
         firstName: user.firstName,
@@ -28,10 +31,8 @@ const authUser = async (req, res) => {
         role: user.role,
         isVerified: user.isVerified,
         idExpirationDate: user.idExpirationDate,
-        verificationRefNumber: user.verificationRefNumber,
       });
     } else {
-      // 401 stands for "Unauthorized"
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {

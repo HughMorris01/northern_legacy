@@ -24,11 +24,7 @@ const userSchema = new mongoose.Schema({
     required: true
   },
   // The unique cryptographic hash of their physical ID to prevent ban evasion
-  idDocumentHash: {
-    type: String,
-    unique: true,
-    sparse: true // Allows accounts to be created before ID verification is complete
-  },
+  sessionToken: { type: String },
   isVerified: {
     type: Boolean,
     required: true,
@@ -36,6 +32,11 @@ const userSchema = new mongoose.Schema({
   },
   verificationRefNumber: {
     type: String
+  },
+  idDocumentHash: {
+    type: String,
+    unique: true,
+    sparse: true // Allows accounts to be created before ID verification is complete
   },
   idExpirationDate: {
     type: String, // String handles both ISO dates and our "Sandbox Mode" placeholder
