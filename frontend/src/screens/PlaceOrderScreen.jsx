@@ -17,12 +17,15 @@ const PlaceOrderScreen = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // THE FIX: If the cart was just emptied by a successful order, stop the security redirect
+    if (cartItems.length === 0) return;
+
     if (!shippingAddress.address) {
       navigate('/shipping');
     } else if (!paymentMethod) {
       navigate('/payment');
     }
-  }, [shippingAddress, paymentMethod, navigate]);
+  }, [shippingAddress, paymentMethod, navigate, cartItems.length]);
 
   const addDecimals = (num) => (Math.round(num * 100) / 100).toFixed(2);
 

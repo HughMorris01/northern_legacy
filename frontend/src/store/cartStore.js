@@ -68,7 +68,18 @@ const useCartStore = create((set, get) => ({
   },
 
   clearCart: () => {
-    set({ cartItems: [] });
+    const currentAddress = get().shippingAddress;
+    
+    // If they used the pickup placeholder, wipe it so the next order safely defaults to Delivery
+    if (currentAddress?.address === 'In-Store Pickup') {
+      set({ cartItems: [], shippingAddress: {} });
+      localStorage.removeItem('shippingAddress');
+    } else {
+      // If it's a real delivery address, keep it safe in Zustand and LocalStorage for the pre-fill!
+      set({ cartItems: [] });
+    }
+    
+    // Always empty the cart items
     localStorage.removeItem('cartItems');
   },
 
