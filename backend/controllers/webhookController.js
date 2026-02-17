@@ -3,7 +3,6 @@ const bcrypt = require('bcryptjs');
 
 const handleIdVerificationWebhook = async (req, res) => {
   try {
-    // 1. Navigate Persona's deeply nested JSON:API structure
     const eventPayload = req.body.data?.attributes?.payload?.data;
     const inquiryAttributes = eventPayload?.attributes;
 
@@ -14,7 +13,6 @@ const handleIdVerificationWebhook = async (req, res) => {
     const referenceId = inquiryAttributes['reference-id'];
     const status = inquiryAttributes.status;
 
-    // Stop processing if this isn't tied to a specific user account
     if (!referenceId) {
       return res.status(200).send('No reference ID provided.'); 
     }
@@ -29,14 +27,16 @@ const handleIdVerificationWebhook = async (req, res) => {
       const fields = inquiryAttributes.fields || {};
       const expirationDate = fields['expiration-date']?.value;
 
-      // 2. The Keyboard Picture Fix
-      // If Persona's OCR can't find an ID number, provide a fallback string 
-      // so bcrypt doesn't fatally crash the server during Sandbox testing!
+      // --- THE FIX: We must define this variable before using it! ---
+      const extractedIdNumber = fields['identification-number']?.value || fields['document-number']?.value;
+
+      // Now this line will work because extractedIdNumber actually exists (even if it's undefined)
       const docToHash = extractedIdNumber || `sandbox_fallback_${eventPayload.id}`;
       
       const salt = await bcrypt.genSalt(10);
       const hashedDocumentNumber = await bcrypt.hash(docToHash, salt);
 
+      // Check for duplicate IDs (Ban Evasion Protection)
       const existingUser = await User.findOne({ idDocumentHash: hashedDocumentNumber });
       if (existingUser && existingUser._id.toString() !== user._id.toString()) {
         console.warn(`Duplicate ID attempt detected for User: ${user._id}`);
@@ -44,9 +44,7 @@ const handleIdVerificationWebhook = async (req, res) => {
       }
 
       user.isVerified = true;
-      user.verificationRefNumber = eventPayload.id; // Store the Persona Inquiry ID for audits
-      
-      // Update this to handle your "Sandbox Mode" or real date
+      user.verificationRefNumber = eventPayload.id;
       user.idExpirationDate = expirationDate || 'Sandbox Mode';
       
       await user.save();
@@ -60,7 +58,6 @@ const handleIdVerificationWebhook = async (req, res) => {
 
   } catch (error) {
     console.error(`Webhook Error: ${error.message}`);
-    // A 500 status code tells Persona's servers to try sending the webhook again later
     res.status(500).send('Server Error Processing Webhook'); 
   }
 };

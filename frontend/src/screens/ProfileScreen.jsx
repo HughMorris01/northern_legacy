@@ -133,7 +133,7 @@ const ProfileScreen = () => {
                   {orders?.map((order) => (
                     <tr key={order._id} style={{ borderBottom: '1px solid #eee' }}>
                       <td style={{ padding: '12px', fontFamily: 'monospace' }}>{order._id.substring(order._id.length - 8).toUpperCase()}</td>
-                      <td style={{ padding: '12px' }}>{order.createdAt.substring(0, 10)}</td>
+                      <td style={{ padding: '12px' }}>{new Date(order.createdAt).toLocaleDateString()}</td>
                       <td style={{ padding: '12px' }}>${(order.totalAmount).toFixed(2)}</td>
                       <td style={{ padding: '12px' }}>
                         <span style={{ 

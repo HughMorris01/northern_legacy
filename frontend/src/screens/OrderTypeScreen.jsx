@@ -11,16 +11,21 @@ const OrderTypeScreen = () => {
   // Bring in the current state to check for stale cache
   const shippingAddress = useCartStore((state) => state.shippingAddress);
 
-  const submitHandler = (e) => {
+ const submitHandler = (e) => {
     e.preventDefault();
     
     if (orderType === 'Pickup') {
-      saveShippingAddress({ address: 'In-Store Pickup', city: 'Clayton', postalCode: '13624', country: 'USA' });
+      // FIX: Added 'terrainType' to satisfy MongoDB's strict schema rules
+      saveShippingAddress({ 
+        address: 'In-Store Pickup', city: 'Alexandria Bay', postalCode: '13607', country: 'USA', terrainType: 'Land' 
+      });
       navigate('/payment'); 
     } else {
-      // THE FIX: If they switch to Delivery, clear the 'In-Store Pickup' cache!
       if (shippingAddress?.address === 'In-Store Pickup') {
-        saveShippingAddress({ address: '', city: 'Clayton', postalCode: '', country: 'USA' });
+        // FIX: Added 'terrainType' here as well in case they switch back to delivery
+        saveShippingAddress({ 
+          address: '', city: '', postalCode: '', country: 'USA', terrainType: '' 
+        });
       }
       navigate('/shipping');
     }
