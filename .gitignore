@@ -1,12 +1,19 @@
-# Dependency folders
-backend/node_modules/
-frontend/node_modules/
+# Logs
+logs
+*.log
+npm-debug.log*
 
-# Local environment files 
-backend/.env
+# Dependencies
+node_modules/
 
-# Build outputs
-frontend/dist/
+# Environment Variables
+.env
 
-# OS generated files
+# Build Outputs
+dist/
+dist-ssr/
+
+# Editor Directories
+.vscode/
+.idea/
 .DS_Store
