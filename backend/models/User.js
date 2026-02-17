@@ -19,6 +19,17 @@ const userSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  dateOfBirth: {
+    type: String, // String is fine for YYYY-MM-DD formats
+    required: true,
+    default: '1900-01-01', // Temporary default so old accounts don't crash
+  },
+  address: {
+    street: { type: String, default: '' },
+    city: { type: String, default: '' },
+    postalCode: { type: String, default: '' },
+    terrainType: { type: String, default: 'Land' }
+  },
   passwordHash: {
     type: String,
     required: true

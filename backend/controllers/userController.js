@@ -149,6 +149,79 @@ const getUserCart = async (req, res) => {
   }
 };
 
+// @desc    Get user profile
+// @route   GET /api/users/profile
+// @access  Private
+const getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+      res.json({
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        dateOfBirth: user.dateOfBirth,
+        role: user.role,
+        isVerified: user.isVerified,
+        idExpirationDate: user.idExpirationDate,
+        address: user.address || {}, 
+      });
+    } else {
+      res.status(404).json({ message: 'User not found.' });
+    }
+  } catch (error) {
+    console.error(`Get Profile Error: ${error.message}`);
+    res.status(500).json({ message: 'Server error retrieving profile.' });
+  }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/users/profile
+// @access  Private
+const updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+      user.firstName = req.body.firstName || user.firstName;
+      user.lastName = req.body.lastName || user.lastName;
+      user.email = req.body.email || user.email;
+      
+      // Update Address if provided
+      if (req.body.address) {
+        user.address = {
+          street: req.body.address.street || user.address?.street || '',
+          city: req.body.address.city || user.address?.city || '',
+          postalCode: req.body.address.postalCode || user.address?.postalCode || '',
+          terrainType: req.body.address.terrainType || user.address?.terrainType || 'Land',
+        };
+      }
+
+      // Only update password if they typed a new one
+      if (req.body.password) {
+        user.password = req.body.password; 
+      }
+
+      const updatedUser = await user.save();
+
+      res.json({
+        _id: updatedUser._id,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        email: updatedUser.email,
+        address: updatedUser.address,
+      });
+    } else {
+      res.status(404).json({ message: 'User not found.' });
+    }
+  } catch (error) {
+    console.error(`Update Profile Error: ${error.message}`);
+    res.status(500).json({ message: 'Server error updating profile.' });
+  }
+};
+
 // @desc    Delete user account (Anonymize data)
 // @route   DELETE /api/users/profile
 // @access  Private
@@ -199,5 +272,7 @@ module.exports = {
   registerUser,
   saveUserCart,
   getUserCart,
+  getUserProfile,
+  updateUserProfile,
   deleteAccount 
 };

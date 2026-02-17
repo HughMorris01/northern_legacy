@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom'; // <-- Added useLocation
 import axios from '../axios';
 import Loader from '../components/Loader';
+import DeliveryChecker from '../components/DeliveryChecker';
 
 const HomeScreen = () => {
   const [products, setProducts] = useState([]);
@@ -46,6 +47,7 @@ const HomeScreen = () => {
 
       <h2>Northern Legacy Menu</h2>
       <h6>**This application is for development purposes only, sales are not real**</h6>
+      <DeliveryChecker />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '20px' }}>
         {products?.map((product) => (
           <div key={product._id} style={{ border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
