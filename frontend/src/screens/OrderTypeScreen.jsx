@@ -1,38 +1,40 @@
-import { useState, useEffect } from 'react'; // 1. Import useEffect
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CheckoutSteps from '../components/CheckoutSteps';
 import useCartStore from '../store/cartStore';
 
 const OrderTypeScreen = () => {
-  const [orderType, setOrderType] = useState(''); 
   const navigate = useNavigate();
 
   const shippingAddress = useCartStore((state) => state.shippingAddress);
   const saveShippingAddress = useCartStore((state) => state.saveShippingAddress);
 
-  // 2. THE FIX: Wipe any stale cache the moment the screen loads
-  useEffect(() => {
-    if (shippingAddress?.address === 'In-Store Pickup') {
-      saveShippingAddress({ address: '', city: '', postalCode: '', country: 'USA', terrainType: '' });
+  // 1. Initialize the radio button based on what is currently in memory (Handles the Back Button)
+  const [orderType, setOrderType] = useState(
+    shippingAddress?.address === 'In-Store Pickup' ? 'Pickup' : 'Delivery'
+  );
+
+  // 2. Instantly update global memory the second a radio button is clicked
+  const handleTypeChange = (e) => {
+    const selectedType = e.target.value;
+    setOrderType(selectedType);
+
+    if (selectedType === 'Pickup') {
+      // Instantly crosses out the SHIP step
+      saveShippingAddress({ address: 'In-Store Pickup', city: 'Clayton', postalCode: '13624', country: 'USA', terrainType: 'Land' });
+    } else {
+      // Instantly un-crosses the SHIP step if they change their mind
+      if (shippingAddress?.address === 'In-Store Pickup') {
+        saveShippingAddress({ address: '', city: '', postalCode: '', country: 'USA', terrainType: 'Land' });
+      }
     }
-  }, [shippingAddress.address, saveShippingAddress]);
+  };
 
   const submitHandler = (e) => {
     e.preventDefault();
-    
     if (orderType === 'Pickup') {
-      // FIX: Added 'terrainType' to satisfy MongoDB's strict schema rules
-      saveShippingAddress({ 
-        address: 'In-Store Pickup', city: 'Alexandria Bay', postalCode: '13607', country: 'USA', terrainType: 'Land' 
-      });
       navigate('/payment'); 
     } else {
-      if (shippingAddress?.address === 'In-Store Pickup') {
-        // FIX: Added 'terrainType' here as well in case they switch back to delivery
-        saveShippingAddress({ 
-          address: '', city: '', postalCode: '', country: 'USA', terrainType: '' 
-        });
-      }
       navigate('/shipping');
     }
   };
@@ -40,42 +42,34 @@ const OrderTypeScreen = () => {
   return (
     <div style={{ maxWidth: '600px', margin: 'auto', padding: '20px' }}>
       <CheckoutSteps step1 step2 />
-      <h1 style={{ textAlign: 'center' }}>How would you like your order?</h1>
-      <form onSubmit={submitHandler} style={{ marginTop: '30px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          <label style={{ 
-            padding: '20px', border: '2px solid', borderRadius: '8px', cursor: 'pointer',
-            borderColor: orderType === 'Delivery' ? 'green' : '#ddd',
-            background: orderType === 'Delivery' ? '#f6ffed' : 'white'
-          }}>
+      <h1>Order Method</h1>
+      <form onSubmit={submitHandler}>
+        <div style={{ marginBottom: '20px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px' }}>
+          
+          <label style={{ display: 'block', marginBottom: '10px', fontSize: '1.2rem', cursor: 'pointer' }}>
             <input 
-              type="radio" name="orderType" value="Delivery" 
+              type="radio" 
+              name="orderType" 
+              value="Delivery" 
               checked={orderType === 'Delivery'} 
-              onChange={(e) => setOrderType(e.target.value)} 
+              onChange={handleTypeChange} 
             />
-            <span style={{ marginLeft: '10px', fontSize: '1.2rem', fontWeight: 'bold' }}>🚚 Local Delivery</span>
-            <p style={{ margin: '5px 0 0 25px', fontSize: '0.9rem', color: '#666' }}>Delivered directly to your door in Clayton.</p>
+            <span style={{ marginLeft: '10px' }}>🚚 Local Delivery</span>
           </label>
 
-          <label style={{ 
-            padding: '20px', border: '2px solid', borderRadius: '8px', cursor: 'pointer',
-            borderColor: orderType === 'Pickup' ? 'green' : '#ddd',
-            background: orderType === 'Pickup' ? '#f6ffed' : 'white'
-          }}>
+          <label style={{ display: 'block', fontSize: '1.2rem', cursor: 'pointer' }}>
             <input 
-              type="radio" name="orderType" value="Pickup" 
+              type="radio" 
+              name="orderType" 
+              value="Pickup" 
               checked={orderType === 'Pickup'} 
-              onChange={(e) => setOrderType(e.target.value)} 
+              onChange={handleTypeChange} 
             />
-            <span style={{ marginLeft: '10px', fontSize: '1.2rem', fontWeight: 'bold' }}>🏪 In-Store Pickup</span>
-            <p style={{ margin: '5px 0 0 25px', fontSize: '0.9rem', color: '#666' }}>Ready for pickup at Northern Legacy.</p>
+            <span style={{ marginLeft: '10px' }}>🏪 In-Store Pickup (Clayton, NY)</span>
           </label>
-        </div>
 
-        <button type="submit" style={{ 
-          width: '100%', padding: '15px', marginTop: '30px', background: 'black', 
-          color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', fontSize: '1.1rem' 
-        }}>
+        </div>
+        <button type="submit" style={{ width: '100%', padding: '15px', background: 'black', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>
           Continue
         </button>
       </form>
