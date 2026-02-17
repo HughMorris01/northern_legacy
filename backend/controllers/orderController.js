@@ -1,4 +1,5 @@
 const Order = require('../models/Order');
+const User = require('../models/User');
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -38,7 +39,17 @@ const addOrderItems = async (req, res) => {
       totalAmount,
     });
 
+    // 1. Save the order to MongoDB
     const createdOrder = await order.save();
+    
+    // NEW FIX: 2. Find the user and completely empty their saved cart!
+    const user = await User.findById(req.user._id);
+    if (user) {
+      user.savedCart = [];
+      await user.save();
+    }
+    
+    // 3. Send the success response
     res.status(201).json(createdOrder);
     
   } catch (error) {
