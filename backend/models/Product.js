@@ -12,15 +12,14 @@ const productSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['Flower', 'Pre-Roll', 'Edible', 'Concentrate', 'Vape', 'Tincture', 'Accessories'],
+    enum: ['Flower', 'Vape', 'Edible', 'Concentrate', 'Pre-Roll', 'Tincture', 'Accessory'],
     required: true
   },
   strainType: {
     type: String,
-    enum: ['Indica', 'Sativa', 'Hybrid', 'CBD', 'N/A'],
-    default: 'N/A'
+    required: false, 
+    enum: ['Sativa', 'Indica', 'Hybrid', 'N/A', ''], 
   },
-  // --- E-COMMERCE & DISPLAY FIELDS ---
   description: {
     type: String,
     required: true
@@ -53,7 +52,6 @@ const productSchema = new mongoose.Schema({
   },
   thcContent: {
     type: Number, // Percentage or mg
-    required: true
   },
   testingStatus: {
     type: String,
