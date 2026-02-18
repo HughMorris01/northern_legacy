@@ -36,7 +36,15 @@ const Header = () => {
       
       {/* Brand Logo: Scaled down from 100px to 60px for mobile */}
       <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
-        <img style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }} src='/northern_beta_logo.jpg' alt="Northern Legacy" />
+        <img 
+          src="/northern_beta_logo.jpg" 
+          alt="Northern Legacy" 
+          style={{ 
+            height: '70px', // Keep your existing size
+            WebkitMaskImage: 'radial-gradient(circle, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 70%)',
+            maskImage: 'radial-gradient(circle, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 70%)'
+          }} 
+        />
       </Link>
       
       <nav style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>

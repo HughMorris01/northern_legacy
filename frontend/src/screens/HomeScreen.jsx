@@ -62,14 +62,14 @@ const HomeScreen = () => {
       <DeliveryChecker />
 
       {/* HEADER WITH NEW MERCH BUTTON */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #eee', paddingBottom: '15px', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
-        <div>
-          <h1 style={{ margin: 0 }}>Northern Legacy Menu</h1>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', borderBottom: '2px solid #eee', paddingBottom: '15px', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+        <div style={{textAlign:"center", display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center"}}>
+          <h2 style={{ margin:"auto" }}>Northern Legacy Menu</h2>
           <span style={{ fontSize: '0.85rem', color: '#999' }}>**Development Mode**</span>
         </div>
         
         {/* NEW: Dedicated External Merch Button */}
-        <a 
+        <div><a 
           href="https://NorthernLegacyMerch.com" 
           target="_blank" 
           rel="noopener noreferrer" 
@@ -85,6 +85,7 @@ const HomeScreen = () => {
         >
           👕 Shop Official Merch
         </a>
+        </div>
       </div>
 
       {/* 1. LIMITED RELEASE CAROUSEL */}

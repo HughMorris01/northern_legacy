@@ -21,8 +21,8 @@ const App = () => {
     <Router>
       <AutoLogoutHandler>
         <Header />
+        <ToastContainer position="top-center" theme="dark" autoClose={3000} />
         <main>
-        <ToastContainer position="bottom-right" theme="dark" />
           <Routes>
             <Route path="/" element={<HomeScreen />} />
             <Route path="/product/:id" element={<ProductScreen />} />
