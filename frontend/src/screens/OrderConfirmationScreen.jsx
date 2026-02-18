@@ -34,7 +34,8 @@ const OrderConfirmationScreen = () => {
     </div>
   );
 
-  const orderItems = order.items || order.orderItems || [];
+  // THE FIX: Cleanly referencing the strict Mongoose keys
+  const orderItems = order.items || [];
   const isDelivery = order.orderType === 'Land Delivery' || order.orderType === 'Water Delivery';
   const isPickup = order.orderType === 'In-Store Pickup';
 
@@ -45,7 +46,6 @@ const OrderConfirmationScreen = () => {
       <h1 style={{ textAlign: "center", borderBottom: '1px solid #5d5a5a', paddingBottom: '10px', marginBottom: "30px", textDecoration: 'none', fontStyle: 'normal' }}>
         Order Confirmation
       </h1>
-      
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
         
@@ -56,24 +56,27 @@ const OrderConfirmationScreen = () => {
           <div style={{ border: '1px solid #eaeaea', padding: '25px', borderRadius: '12px', background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
             <h2 style={{ marginTop: 0, marginBottom: '20px', fontSize: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>Order Details</h2>
             
-            <p style={{ margin: '5px 0 20px 0', fontSize: '1.05rem' }}>
+            <p style={{ margin: '5px 0 25px 0', fontSize: '1.05rem' }}>
               <strong>Payment Method: </strong> {order.paymentMethod}
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
-              {orderItems.map((item, index) => {
-                const itemPrice = item.priceAtPurchase || item.price || 0;
-                return (
-                  <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Link to={`/product/${item.productId || item.product}`} style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 'bold' }}>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '1.1rem', color: '#444' }}>Items Purchased:</h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
+              {orderItems.length === 0 ? (
+                <p style={{ color: '#999', fontStyle: 'italic' }}>No items found for this order.</p>
+              ) : (
+                orderItems.map((item, index) => (
+                  <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed #eee', paddingBottom: '12px' }}>
+                    <Link to={`/product/${item.productId}`} style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 'bold', flex: 1, paddingRight: '15px' }}>
                       {item.name}
                     </Link>
-                    <span style={{ color: '#555' }}>
-                      {item.quantity || item.qty} x ${(itemPrice / 100).toFixed(2)} = <strong style={{ color: '#111' }}>${(((item.quantity || item.qty) * itemPrice) / 100).toFixed(2)}</strong>
+                    <span style={{ color: '#555', whiteSpace: 'nowrap' }}>
+                      {item.quantity} x ${(item.priceAtPurchase / 100).toFixed(2)} = <strong style={{ color: '#111', marginLeft: '5px' }}>${((item.quantity * item.priceAtPurchase) / 100).toFixed(2)}</strong>
                     </span>
                   </div>
-                );
-              })}
+                ))
+              )}
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #f0f0f0', paddingTop: '15px', fontWeight: 'bold', fontSize: '1.25rem', color: '#111' }}>

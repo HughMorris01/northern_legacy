@@ -13,8 +13,9 @@ const orderSchema = new mongoose.Schema({
     {
       name: { type: String, required: true },
       quantity: { type: Number, required: true },
-      priceAtPurchase: { type: Number, required: true }, // Price in cents at exact time of checkout
-      metrcPackageUid: { type: String, required: true }, // THE SOURCE: The blue tag for the bulk batch
+      priceAtPurchase: { type: Number, required: true }, 
+      weightInOunces: { type: Number, required: true }, // Item-level weight for compliance
+      metrcPackageUid: { type: String, required: true }, 
       productId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Product' },
     }
   ],
@@ -48,11 +49,12 @@ const orderSchema = new mongoose.Schema({
     default: 'Pending' 
   },
   metrcSalesReceiptId: {
-    type: String // THE DESTINATION: The unique ID for this specific transaction once pushed to Metrc
+    type: String // Populated async after the state confirms receipt of the transaction
   },
 
-  // Financials
+  // Financials & Compliance Auditing
   totalAmount: { type: Number, required: true },
+  totalWeightInOunces: { type: Number, required: true }, // Aggregate order weight
   
   // Future implementations for the Driver App
   handoffToken: { type: String },
@@ -64,14 +66,13 @@ const orderSchema = new mongoose.Schema({
       enum: ['Point']
     },
     coordinates: {
-      type: [Number] // Array of [longitude, latitude]
+      type: [Number] 
     }
   }
 }, {
-  timestamps: true // Automatically creates 'createdAt' and 'updatedAt'
+  timestamps: true 
 });
 
-// Creates a specialized geospatial index so MongoDB can quickly calculate delivery routes (Haversine math)
 orderSchema.index({ deliveryCoordinates: '2dsphere' });
 
 const Order = mongoose.model('Order', orderSchema);

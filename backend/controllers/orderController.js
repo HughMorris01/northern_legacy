@@ -3,7 +3,7 @@ import Product from '../models/Product.js';
 
 const addOrderItems = async (req, res) => {
   const {
-    orderItems,
+    orderItems, // Sent from frontend cart
     shippingAddress,
     paymentMethod,
     totalAmount,
@@ -14,7 +14,10 @@ const addOrderItems = async (req, res) => {
     throw new Error('No order items found');
   }
 
-  // 1. THE RACE-CONDITION CHECK
+  const validatedItems = [];
+  let calculatedTotalWeight = 0;
+
+  // 1. SECURE HYDRATION & RACE-CONDITION CHECK
   for (const item of orderItems) {
     const product = await Product.findById(item._id);
     
@@ -30,6 +33,19 @@ const addOrderItems = async (req, res) => {
         remainingQty: product.stockQuantity
       });
     }
+
+    // Instead of trusting the frontend payload, we build the item strictly from the DB
+    validatedItems.push({
+      name: product.name,
+      quantity: item.qty, // The only variable we trust from the frontend
+      priceAtPurchase: product.price, 
+      weightInOunces: product.weightInOunces, // Securely grabbed from DB
+      metrcPackageUid: product.metrcPackageUid, // Securely grabbed from DB
+      productId: product._id,
+    });
+
+    // Tally the total order weight for the state compliance field
+    calculatedTotalWeight += (product.weightInOunces * item.qty);
   }
 
   // 2. DETERMINE PRD STATUS & ORDER TYPE
@@ -45,25 +61,22 @@ const addOrderItems = async (req, res) => {
   // 3. GENERATE HANDOFF TOKEN
   const handoffToken = `NL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-  // 4. CREATE ORDER (We do this BEFORE deducting inventory now!)
+  // 4. CREATE ORDER
   const order = new Order({
-    orderItems: orderItems.map((x) => ({
-      ...x,
-      product: x._id,
-      _id: undefined, 
-    })),
-    customerId: req.user._id, // Fixed: Matched to PRD schema
-    orderType: orderType,     // Fixed: Added missing required field
+    items: validatedItems, // We use our highly secure, DB-hydrated array here
+    customerId: req.user._id, 
+    orderType: orderType,     
     shippingAddress,
     paymentMethod,
     totalAmount,
+    totalWeightInOunces: calculatedTotalWeight, // Pass the calculated total weight
     handoffToken,
     status: initialStatus,
   });
 
-  const createdOrder = await order.save(); // If this fails, the code stops here.
+  const createdOrder = await order.save(); 
 
-  // 5. THE DEDUCTION (Safe to execute because the order is saved)
+  // 5. THE DEDUCTION
   for (const item of orderItems) {
     await Product.findByIdAndUpdate(item._id, {
       $inc: { stockQuantity: -item.qty } 
@@ -78,15 +91,12 @@ const addOrderItems = async (req, res) => {
 // @access  Private
 const getOrderById = async (req, res) => {
   try {
-    // Find the order and attach the customer's name and email
     const order = await Order.findById(req.params.id).populate(
       'customerId',
       'firstName lastName email'
     );
 
     if (order) {
-      // Security Check: Ensure the user requesting the order actually owns it (or is an admin)
-      // Note: We will add the strict admin check later, for now we just verify ownership
       if (order.customerId._id.toString() === req.user._id.toString() || req.user.role === 'admin') {
         res.status(200).json(order);
       } else {
@@ -106,7 +116,6 @@ const getOrderById = async (req, res) => {
 // @access  Private
 const getMyOrders = async (req, res) => {
   try {
-    // Find all orders matching this user's ID
     const orders = await Order.find({ customerId: req.user._id });
     res.status(200).json(orders);
   } catch (error) {
@@ -115,4 +124,4 @@ const getMyOrders = async (req, res) => {
   }
 };
 
-export { addOrderItems, getOrderById, getMyOrders};
+export { addOrderItems, getOrderById, getMyOrders };
