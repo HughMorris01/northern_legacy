@@ -12,6 +12,7 @@ const authUser = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
+      
       const currentSessionToken = crypto.randomBytes(20).toString('hex');
       
       user.sessionToken = currentSessionToken;
@@ -19,10 +20,14 @@ const authUser = async (req, res) => {
 
       generateToken(res, user._id, currentSessionToken);
 
+      // We now explicitly return the preferred names and sync status on login
       res.json({
         _id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
+        preferredFirstName: user.preferredFirstName, 
+        preferredLastName: user.preferredLastName,
+        syncName: user.syncName,
         email: user.email,
         role: user.role,
         isVerified: user.isVerified,

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from '../axios';
 import Loader from '../components/Loader';
 import { toast } from 'react-toastify';
+import useAuthStore from '../store/authStore'
 
 const EditContactScreen = () => {
   const navigate = useNavigate();
@@ -29,6 +30,8 @@ const EditContactScreen = () => {
 
   const [loading, setLoading] = useState(true);
   const [updateLoading, setUpdateLoading] = useState(false);
+
+  const updateUserInfo = useAuthStore((state) => state.updateUserInfo);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -71,7 +74,8 @@ const EditContactScreen = () => {
     try {
       setUpdateLoading(true);
       
-      await axios.put('/api/users/profile', {
+      // Capture the response into a { data } variable
+      const { data } = await axios.put('/api/users/profile', {
         preferredFirstName,
         preferredLastName,
         syncName: isVerified ? syncName : false,
@@ -80,6 +84,9 @@ const EditContactScreen = () => {
         mailingAddress: { street, city, postalCode },
         syncAddresses: deliveryTerrain === 'Land' ? syncAddresses : false,
       });
+
+      // FIRE THE UPDATE: This instantly syncs the Header and LocalStorage!
+      updateUserInfo(data);
 
       toast.success('Contact Information Updated!');
       navigate('/profile'); 

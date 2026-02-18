@@ -30,17 +30,18 @@ const Header = () => {
     }
   };
 
+  // Dynamically prioritize the preferred name for the greeting
+  const greetingName = userInfo?.preferredFirstName || userInfo?.firstName;
+
   return (
-    // Reduced padding for mobile, wrapped in a flexbox
     <header style={{ background: '#1a1a1a', padding: '10px 15px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
       
-      {/* Brand Logo: Scaled down from 100px to 60px for mobile */}
       <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
         <img 
           src="/northern_beta_logo.jpg" 
           alt="Northern Legacy" 
           style={{ 
-            height: '70px', // Keep your existing size
+            height: '70px', 
             WebkitMaskImage: 'radial-gradient(circle, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 70%)',
             maskImage: 'radial-gradient(circle, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 70%)'
           }} 
@@ -49,13 +50,17 @@ const Header = () => {
       
       <nav style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
         
-        {/* Cart Link with Badge */}
-        <Link to="/cart" style={{ color: 'white', textDecoration: 'none', fontSize: '1rem', position: 'relative', marginRight: '5px' }}>
+        <Link 
+          to="/cart" 
+          style={{ color: 'white', textDecoration: 'none', fontSize: '1rem', position: 'relative', marginRight: '5px', transition: 'color 0.2s' }}
+          onMouseOver={(e) => e.currentTarget.style.color = '#1890ff'}
+          onMouseOut={(e) => e.currentTarget.style.color = 'white'}
+        >
           🛒 Cart
           {totalItems > 0 && (
             <span style={{ 
-              position: 'absolute', top: '-8px', right: '-12px', background: 'red', color: 'white', 
-              borderRadius: '50%', padding: '2px 6px', fontSize: '0.7rem', fontWeight: 'bold' 
+              position: 'absolute', top: '-8px', right: '-12px', background: '#cf1322', color: 'white', 
+              borderRadius: '50%', padding: '2px 6px', fontSize: '0.7rem', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
             }}>
               {totalItems}
             </span>
@@ -63,24 +68,31 @@ const Header = () => {
         </Link>
 
         {userInfo ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {/* Shorter greeting for mobile */}
-            <Link to="/profile" style={{ color: 'white', textDecoration: 'none', fontSize: '0.9rem' }}>
-              👤 <strong>{userInfo.firstName}</strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <Link 
+              to="/profile" 
+              style={{ color: 'white', textDecoration: 'none', fontSize: '0.95rem', transition: 'color 0.2s' }}
+              onMouseOver={(e) => e.currentTarget.style.color = '#1890ff'}
+              onMouseOut={(e) => e.currentTarget.style.color = 'white'}
+            >
+              👤 <strong>{greetingName}</strong>
             </Link>
             <button 
               onClick={logoutHandler}
-              style={{ background: 'transparent', color: '#ff4d4f', border: '1px solid #ff4d4f', padding: '5px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '0.9rem' }}
+              style={{ background: 'transparent', color: '#ff4d4f', border: '1px solid #ff4d4f', padding: '6px 12px', borderRadius: '5px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', transition: 'all 0.2s' }}
+              onMouseOver={(e) => { e.currentTarget.style.background = '#ff4d4f'; e.currentTarget.style.color = 'white'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#ff4d4f'; }}
             >
               Logout
             </button>
           </div>
         ) : (
-          /* NEW: A highly visible Login button */
-          <Link to="/login" style={{ 
-            background: 'white', color: 'black', textDecoration: 'none', 
-            padding: '6px 12px', borderRadius: '5px', fontSize: '0.9rem', fontWeight: 'bold' 
-          }}>
+          <Link 
+            to="/login" 
+            style={{ background: 'white', color: 'black', textDecoration: 'none', padding: '6px 15px', borderRadius: '5px', fontSize: '0.95rem', fontWeight: 'bold', transition: 'background 0.2s' }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#e6e6e6'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+          >
             Login
           </Link>
         )}

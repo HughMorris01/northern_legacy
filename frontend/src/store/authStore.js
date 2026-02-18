@@ -19,6 +19,14 @@ const useAuthStore = create((set) => ({
     set({ userInfo: null });
     localStorage.removeItem('userInfo');
   },
+  updateUserInfo: (data) => {
+    set((state) => {
+      // Merge the existing user data with the fresh updates from the backend
+      const updatedUser = { ...state.userInfo, ...data };
+      localStorage.setItem('userInfo', JSON.stringify(updatedUser));
+      return { userInfo: updatedUser };
+    });
+  },
 }));
 
 export default useAuthStore;

@@ -5,11 +5,10 @@ import useAuthStore from '../store/authStore';
 import Loader from '../components/Loader';
 import { toast } from 'react-toastify';
 
-const ProfileScreen = () => {
+const ProfileScreen = () => { 
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
 
-  // UI State
   const [profileData, setProfileData] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +19,6 @@ const ProfileScreen = () => {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      
       try {
         const profileRes = await axios.get('/api/users/profile');
         setProfileData(profileRes.data);
@@ -29,13 +27,11 @@ const ProfileScreen = () => {
       }
 
       try {
-        // Updated to match your backend route fix!
         const ordersRes = await axios.get('/api/orders/myorders');
         setOrders(ordersRes.data);
       } catch {
         toast.error('Failed to load order history.');
       }
-
       setLoading(false);
     };
 
@@ -62,19 +58,26 @@ const ProfileScreen = () => {
 
   if (loading) return <Loader />;
 
+  // DYNAMIC NAME RESOLUTION
+  const displayFirstName = profileData?.preferredFirstName || profileData?.firstName;
+  const displayLastName = profileData?.preferredLastName || profileData?.lastName;
+
   return (
     <div style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 15px', fontFamily: 'sans-serif', boxSizing: 'border-box', overflowX: 'hidden' }}>
       
-      <div style={{ borderBottom: '2px solid #111', paddingBottom: '10px', marginBottom: '30px' }}>
-        <h1 style={{ margin: 0 }}>My Profile</h1>
+      {/* UPDATED DYNAMIC DASHBOARD HEADER */}
+      <div style={{ borderBottom: '2px solid #111', paddingBottom: '10px', marginBottom: '30px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+        <h1 style={{ margin: 0, fontSize: '2rem' }}>
+          {displayFirstName ? `${displayFirstName}'s Dashboard` : 'My Profile'}
+        </h1>
+        <p style={{ margin: 0, color: '#666', fontSize: '1rem' }}>Manage your identity, addresses, and order history.</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '40px' }}>
         
-        {/* LEFT COLUMN: Identity, Address, Bank Info */}
         <div style={{ width: '100%', boxSizing: 'border-box' }}>
           
-          {/* THE VERIFICATION BANNER */}
+          {/* VERIFICATION BANNER */}
           <div style={{ background: profileData?.isVerified ? '#f6ffed' : '#fff2f0', border: `1px solid ${profileData?.isVerified ? '#b7eb8f' : '#ffccc7'}`, padding: '20px', borderRadius: '8px', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <p style={{ color: profileData?.isVerified ? '#389e0d' : '#cf1322', fontWeight: 'bold', margin: 0, fontSize: '1.1rem' }}>
               ID Verification Status: {profileData?.isVerified ? 'Verified 21+' : 'Pending / Not Verified'}
@@ -116,6 +119,12 @@ const ProfileScreen = () => {
                 Edit
               </button>
             </div>
+            
+            {/* UPDATED: Dynamic Digital Name Field */}
+            <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem' }}>
+              <strong>Digital Name:</strong> {displayFirstName} {displayLastName}
+              {profileData?.syncName && <span style={{ fontSize: '0.8rem', color: '#1890ff', marginLeft: '10px', fontWeight: 'bold' }}>(Synced to Legal)</span>}
+            </p>
             <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem' }}><strong>Email:</strong> {profileData?.email}</p>
             <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem' }}><strong>Phone:</strong> {profileData?.phoneNumber || <span style={{ color: '#999', fontStyle: 'italic' }}>Not Provided</span>}</p>
             <p style={{ margin: 0, fontSize: '1.05rem' }}>
@@ -159,7 +168,11 @@ const ProfileScreen = () => {
             <div style={{ padding: '15px', background: '#f9f9f9', border: '1px solid #ddd', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <p style={{ margin: 0, fontWeight: 'bold', color: '#111', fontSize: '1.05rem' }}>🏦 Aeropay Digital ACH</p>
-                <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '0.9rem' }}>No active account linked.</p>
+                {profileData?.linkedBank ? (
+                  <p style={{ margin: '5px 0 0 0', color: '#389e0d', fontSize: '0.9rem', fontWeight: 'bold' }}>Active Link: {profileData.linkedBank}</p>
+                ) : (
+                  <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '0.9rem' }}>No active account linked.</p>
+                )}
               </div>
             </div>
 
