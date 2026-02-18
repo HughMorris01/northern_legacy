@@ -12,15 +12,11 @@ const authUser = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
-      
-      // 1. Generate a random 40-character session string
       const currentSessionToken = crypto.randomBytes(20).toString('hex');
       
-      // 2. Save it to the database (This invalidates any previous session strings!)
       user.sessionToken = currentSessionToken;
       await user.save();
 
-      // 3. Pass BOTH the ID and the new session string to the cookie generator
       generateToken(res, user._id, currentSessionToken);
 
       res.json({
@@ -45,12 +41,10 @@ const authUser = async (req, res) => {
 // @route   POST /api/users/logout
 // @access  Public
 const logoutUser = async (req, res) => {
-  // To "logout", we just overwrite the existing cookie with a blank one that expires instantly
   res.cookie('jwt', '', {
     httpOnly: true,
     expires: new Date(0),
   });
-  
   res.status(200).json({ message: 'Logged out successfully' });
 };
 
@@ -61,22 +55,19 @@ const registerUser = async (req, res) => {
   try {
     const { firstName, lastName, email, password } = req.body;
 
-    // 1. Check if the email is already in use
     const userExists = await User.findOne({ email });
 
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // 2. Create the user (our Mongoose pre-save middleware will automatically hash the password!)
     const user = await User.create({
       firstName,
       lastName,
       email,
-      passwordHash: password, // We map the plain text password to our schema's field name
+      passwordHash: password, 
     });
 
-    // 3. If successfully created, generate the token and send back the data
     if (user) {
       generateToken(res, user._id);
       
@@ -106,9 +97,8 @@ const saveUserCart = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     if (user) {
-      // req.body.cartItems comes directly from Zustand local storage
       user.savedCart = req.body.cartItems.map((item) => ({
-        product: item._id, // Map the frontend _id to the backend product ObjectId
+        product: item._id, 
         qty: item.qty
       }));
       await user.save();
@@ -127,15 +117,13 @@ const saveUserCart = async (req, res) => {
 // @access  Private
 const getUserCart = async (req, res) => {
   try {
-    // Find the user and populate the product details so the frontend gets all the imagery/pricing
     const user = await User.findById(req.user._id).populate('savedCart.product');
     
     if (user) {
-      // Reformat the database cart to perfectly match what Zustand expects
       const formattedCart = user.savedCart
-        .filter((item) => item.product !== null) // Strip out any products that were deleted from the DB by admins
+        .filter((item) => item.product !== null) 
         .map((item) => ({
-          ...item.product._doc, // Spreads the product details
+          ...item.product._doc, 
           qty: item.qty
         }));
 
@@ -161,12 +149,19 @@ const getUserProfile = async (req, res) => {
         _id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
+        preferredFirstName: user.preferredFirstName,
+        preferredLastName: user.preferredLastName,
+        syncName: user.syncName || false,
         email: user.email,
+        phoneNumber: user.phoneNumber,
         dateOfBirth: user.dateOfBirth,
         role: user.role,
         isVerified: user.isVerified,
         idExpirationDate: user.idExpirationDate,
         address: user.address || {}, 
+        mailingAddress: user.mailingAddress || {},
+        syncAddresses: user.syncAddresses || false,
+        linkedBank: user.linkedBank || '',
       });
     } else {
       res.status(404).json({ message: 'User not found.' });
@@ -185,11 +180,29 @@ const updateUserProfile = async (req, res) => {
     const user = await User.findById(req.user._id);
 
     if (user) {
-      user.firstName = req.body.firstName || user.firstName;
-      user.lastName = req.body.lastName || user.lastName;
+      // Basic Contact & Bank Info
       user.email = req.body.email || user.email;
+      if (req.body.phoneNumber !== undefined) user.phoneNumber = req.body.phoneNumber;
+      if (req.body.linkedBank !== undefined) user.linkedBank = req.body.linkedBank;
       
-      // Update Address if provided
+      // Preferred Name Updates
+      if (req.body.preferredFirstName !== undefined) user.preferredFirstName = req.body.preferredFirstName;
+      if (req.body.preferredLastName !== undefined) user.preferredLastName = req.body.preferredLastName;
+      if (req.body.syncName !== undefined) user.syncName = req.body.syncName;
+
+      // THE NAME SYNC LOGIC
+      if (user.syncName) {
+        if (user.isVerified) {
+          user.preferredFirstName = user.firstName;
+          user.preferredLastName = user.lastName;
+        } else {
+          // Failsafe: Cannot sync if no legal identity exists
+          user.syncName = false;
+        }
+      }
+
+      // Address Updates
+      if (req.body.syncAddresses !== undefined) user.syncAddresses = req.body.syncAddresses;
       if (req.body.address) {
         user.address = {
           street: req.body.address.street || user.address?.street || '',
@@ -198,20 +211,41 @@ const updateUserProfile = async (req, res) => {
           terrainType: req.body.address.terrainType || user.address?.terrainType || 'Land',
         };
       }
+      if (req.body.mailingAddress) {
+        user.mailingAddress = {
+          street: req.body.mailingAddress.street || user.mailingAddress?.street || '',
+          city: req.body.mailingAddress.city || user.mailingAddress?.city || '',
+          postalCode: req.body.mailingAddress.postalCode || user.mailingAddress?.postalCode || '',
+        };
+      }
 
-      // Only update password if they typed a new one
+      // THE ADDRESS SYNC LOGIC
+      if (user.syncAddresses) {
+        if (user.address.terrainType === 'Land') {
+          user.mailingAddress = {
+            street: user.address.street,
+            city: user.address.city,
+            postalCode: user.address.postalCode,
+          };
+        } else {
+          user.syncAddresses = false;
+        }
+      }
+
       if (req.body.password) {
-        user.password = req.body.password; 
+        user.passwordHash = req.body.password; 
       }
 
       const updatedUser = await user.save();
 
       res.json({
         _id: updatedUser._id,
-        firstName: updatedUser.firstName,
-        lastName: updatedUser.lastName,
         email: updatedUser.email,
-        address: updatedUser.address,
+        phoneNumber: updatedUser.phoneNumber,
+        preferredFirstName: updatedUser.preferredFirstName,
+        preferredLastName: updatedUser.preferredLastName,
+        syncName: updatedUser.syncName,
+        linkedBank: updatedUser.linkedBank,
       });
     } else {
       res.status(404).json({ message: 'User not found.' });
@@ -230,27 +264,24 @@ const deleteAccount = async (req, res) => {
     const user = await User.findById(req.user._id);
 
     if (user) {
-      // 1. Anonymize personal identifiers
       user.firstName = 'Deleted';
       user.lastName = 'User';
-      // We attach their ID to the email so MongoDB doesn't throw a "Duplicate Email" error 
-      // if multiple people delete their accounts
       user.email = `deleted_${user._id}@anonymized.com`; 
+      user.phoneNumber = '';
       
-      // 2. Scramble the password so the account can never be logged into again
       const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(Date.now().toString(), salt);
+      user.passwordHash = await bcrypt.hash(Date.now().toString(), salt);
 
-      // 3. Wipe all sensitive compliance and Persona data
       user.idDocumentHash = undefined;
       user.verificationRefNumber = undefined;
       user.idExpirationDate = undefined;
       user.isVerified = false;
       user.savedCart = [];
+      user.address = {};
+      user.mailingAddress = {};
 
       await user.save();
 
-      // 4. Destroy their auth cookie to instantly log them out
       res.cookie('jwt', '', {
         httpOnly: true,
         expires: new Date(0),

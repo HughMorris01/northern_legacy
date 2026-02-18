@@ -19,16 +19,37 @@ const userSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  preferredFirstName: { 
+    type: String, 
+    default: ''
+   },
+  preferredLastName: { 
+    type: String, 
+    default: '' 
+  },
   dateOfBirth: {
     type: String, // String is fine for YYYY-MM-DD formats
     required: true,
     default: '1900-01-01', // Temporary default so old accounts don't crash
   },
-  address: {
-    street: { type: String, default: '' },
-    city: { type: String, default: '' },
-    postalCode: { type: String, default: '' },
-    terrainType: { type: String, default: 'Land' }
+  phoneNumber: {
+    type: String,
+    default: '',
+  },
+  address: { // This is the Primary Delivery Address
+    street: { type: String },
+    city: { type: String },
+    postalCode: { type: String },
+    terrainType: { type: String, default: 'Land' },
+  },
+  mailingAddress: { // The new secondary address
+    street: { type: String },
+    city: { type: String },
+    postalCode: { type: String },
+  },
+  syncAddresses: {
+    type: Boolean,
+    default: false, // Tracks if the user checked the "Sync with Delivery" box
   },
   passwordHash: {
     type: String,
@@ -53,6 +74,14 @@ const userSchema = new mongoose.Schema({
     type: String, // String handles both ISO dates and our "Sandbox Mode" placeholder
     default: null,
   },
+  syncName: { 
+    type: Boolean, 
+    default: false 
+  },
+  linkedBank: { 
+    type: String, 
+    default: '' 
+  }, 
   // Array of timestamps for the 12-month rolling strike logic
   deliveryStrikes: [{
     type: Date
@@ -66,9 +95,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['customer', 'admin', 'budtender', 'driver'],
     default: 'customer'
-  },
-  phoneNumber: {
-    type: String
   },
   smsOptIn: {
     type: Boolean,

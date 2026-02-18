@@ -6,15 +6,19 @@ import Header from './components/Header';
 import HomeScreen from './screens/HomeScreen';
 import ProductScreen from './screens/ProductScreen';
 import CartScreen from './screens/CartScreen';
-import LoginScreen from './screens/LoginScreen';
-import RegisterScreen from './screens/RegisterScreen';
+import OrderTypeScreen from './screens/OrderTypeScreen';
 import ShippingScreen from './screens/ShippingScreen';
 import PaymentScreen from './screens/PaymentScreen';
 import PlaceOrderScreen from './screens/PlaceOrderScreen';
 import OrderConfirmationScreen from './screens/OrderConfirmationScreen';
+import LoginScreen from './screens/LoginScreen';
+import RegisterScreen from './screens/RegisterScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import EditContactScreen from './screens/EditContactScreen';
+import EditDeliveryScreen from './screens/EditDeliveryScreen';
+import EditBankScreen from './screens/EditBankScreen';
 import VerificationScreen from './screens/VerificationScreen';
-import OrderTypeScreen from './screens/OrderTypeScreen';
+
 
 const App = () => {
   return (
@@ -36,6 +40,9 @@ const App = () => {
             <Route path="/order/:id" element={<OrderConfirmationScreen />} />
             <Route path="/profile" element={<ProfileScreen />} />
             <Route path="/verify" element={<VerificationScreen />} />
+            <Route path="/profile/contact" element={<EditContactScreen />} />
+            <Route path="/profile/delivery" element={<EditDeliveryScreen />} />
+            <Route path="/profile/bank" element={<EditBankScreen />} />
           </Routes>
         </main>
       </AutoLogoutHandler>
