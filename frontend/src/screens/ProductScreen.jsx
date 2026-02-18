@@ -35,9 +35,14 @@ const ProductScreen = () => {
   const availableStock = (product.stockQuantity || 0) - qtyInCart;
 
   const addToCartHandler = () => {
-    addToCart(product, Number(qty));
-    toast.success(`${qty}x ${product.name} added to cart!`);
-    setQty(1); 
+    // Capture the true/false response from your updated cartStore
+    const isSuccess = addToCart(product, Number(qty)); 
+    
+    // Only show the green success toast if the store actually allowed it!
+    if (isSuccess) {
+      toast.success(`${qty}x ${product.name} added to cart!`);
+      setQty(1); 
+    }
   };
 
   if (loading) return <Loader />;

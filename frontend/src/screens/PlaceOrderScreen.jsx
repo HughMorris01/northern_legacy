@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useCartStore from '../store/cartStore';
+import useAuthStore from '../store/authStore'; // Added to grab the user's name
 import CheckoutSteps from '../components/CheckoutSteps';
 import { TAX_RATES } from '../utils/constants'; 
 import axios from '../axios'; 
@@ -9,6 +10,7 @@ import { toast } from 'react-toastify';
 const PlaceOrderScreen = () => {
   const navigate = useNavigate();
 
+  const userInfo = useAuthStore((state) => state.userInfo); // Pull user details
   const cartItems = useCartStore((state) => state.cartItems);
   const shippingAddress = useCartStore((state) => state.shippingAddress);
   const paymentMethod = useCartStore((state) => state.paymentMethod);
@@ -46,6 +48,13 @@ const PlaceOrderScreen = () => {
   const stateTax = itemsPrice * TAX_RATES.STATE;  
   const totalPrice = itemsPrice + exciseTax + localTax + stateTax;
 
+  // Dynamic UI variables
+  const isPickup = shippingAddress.address === 'In-Store Pickup';
+  let orderTypeDisplay = 'Delivery';
+  if (isPickup) orderTypeDisplay = 'Pick-Up';
+  else if (shippingAddress.terrainType === 'Water') orderTypeDisplay = 'Water Delivery';
+  else if (shippingAddress.terrainType === 'Land') orderTypeDisplay = 'Land Delivery';
+
   const triggerOrderHandler = () => {
     if (paymentMethod === 'Aeropay (ACH)') {
       setModalStep('select-bank'); 
@@ -76,7 +85,7 @@ const PlaceOrderScreen = () => {
     } catch (err) {
       if (err.response?.data?.errorType === 'INVENTORY_SHORTAGE' || err.response?.status === 409) {
         setInventoryIssue(err.response.data);
-        toast.error('Cart update required to proceed.');
+        toast.warning('Cart update required to proceed.');
       } else {
         setError(err.response?.data?.message || 'Failed to place order.');
       }
@@ -85,17 +94,13 @@ const PlaceOrderScreen = () => {
     }
   };
 
-  // THE FIX: Solves the Zustand Accumulator Bug
   const fixCartHandler = () => {
     if (inventoryIssue.remainingQty === 0) {
       removeFromCart(inventoryIssue.product._id);
       toast.info(`${inventoryIssue.product.name} removed from cart.`);
       setInventoryIssue(null); 
     } else {
-      // 1. Wipe the item completely out of the cart first
       removeFromCart(inventoryIssue.product._id);
-      
-      // 2. Wait a microsecond for Zustand to update, then inject the exact fresh quantity
       setTimeout(() => {
         addToCart(inventoryIssue.product, inventoryIssue.remainingQty);
         toast.success(`Cart corrected to ${inventoryIssue.remainingQty} available units.`);
@@ -109,10 +114,9 @@ const PlaceOrderScreen = () => {
     setModalStep('login');
   };
 
-  // THE FIX: Solves the overlapping timeout freeze
   const handleBankLogin = (e) => {
     e.preventDefault();
-    if (modalStep === 'processing' || modalStep === 'success') return; // Blocks double-clicks
+    if (modalStep === 'processing' || modalStep === 'success') return; 
     
     setModalStep('processing');
     
@@ -134,12 +138,27 @@ const PlaceOrderScreen = () => {
         {/* LEFT COLUMN: Review Info */}
         <div>
           <div style={{ paddingBottom: '20px', borderBottom: '1px solid #eee', marginBottom: '20px' }}>
-            <h2 style={{ marginBottom: '10px' }}>Shipping / Delivery</h2>
-            <p><strong>Terrain Type: </strong> {shippingAddress.terrainType}</p>
-            <p>
-              <strong>Address: </strong> 
-              {shippingAddress.address}, {shippingAddress.city} {shippingAddress.postalCode}
+            <h2 style={{ marginBottom: '15px' }}>Order Details</h2>
+            
+            <p style={{ margin: '5px 0' }}>
+              <strong>Name: </strong> {userInfo?.firstName} {userInfo?.lastName}
             </p>
+            <p style={{ margin: '5px 0' }}>
+              <strong>Order Type: </strong> {orderTypeDisplay}
+            </p>
+            <p style={{ margin: '5px 0' }}>
+              <strong>Address: </strong> 
+              {isPickup 
+                ? 'Northern Legacy Store' 
+                : `${shippingAddress.address}, ${shippingAddress.city} ${shippingAddress.postalCode}`
+              }
+            </p>
+            
+            {!isPickup && (
+              <p style={{ margin: '5px 0', color: '#1890ff', fontWeight: 'bold' }}>
+                <strong>Delivery Window: </strong> Afternoon (12:00 PM - 4:00 PM)
+              </p>
+            )}
           </div>
 
           <div style={{ paddingBottom: '20px', borderBottom: '1px solid #eee', marginBottom: '20px' }}>
@@ -174,15 +193,14 @@ const PlaceOrderScreen = () => {
           
           {error && !inventoryIssue && <div style={{ background: '#ff4d4f', color: 'white', padding: '10px', borderRadius: '5px', marginBottom: '15px' }}>{error}</div>}
 
-          {/* DYNAMIC INVENTORY RESOLUTION UI */}
           {inventoryIssue && (
-            <div style={{ background: '#fff2f0', border: '1px solid #ffccc7', padding: '15px', borderRadius: '8px', marginBottom: '20px', animation: 'fadeIn 0.3s' }}>
-              <h3 style={{ color: '#cf1322', margin: '0 0 10px 0', fontSize: '1.1rem' }}>⚠️ Cart Adjustment Needed</h3>
+            <div style={{ background: '#fffbe6', border: '1px solid #ffe58f', padding: '15px', borderRadius: '8px', marginBottom: '20px', animation: 'fadeIn 0.3s' }}>
+              <h3 style={{ color: '#d48806', margin: '0 0 10px 0', fontSize: '1.1rem' }}>⚠️ Cart Adjustment Needed</h3>
               <p style={{ margin: '0 0 15px 0', color: '#666', fontSize: '0.9rem' }}>{inventoryIssue.message}</p>
               
               <button 
                 onClick={fixCartHandler}
-                style={{ width: '100%', padding: '10px', background: '#cf1322', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}
+                style={{ width: '100%', padding: '10px', background: '#d48806', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}
               >
                 {inventoryIssue.remainingQty === 0 
                   ? `Remove ${inventoryIssue.product.name} from Cart` 
@@ -263,7 +281,6 @@ const PlaceOrderScreen = () => {
                   <input type="password" placeholder="Passcode" value={fakePassword} onChange={(e) => setFakePassword(e.target.value)} style={{ padding: '12px', border: '1px solid #ccc', borderRadius: '4px' }} required />
                   <p style={{ fontSize: '0.8rem', color: '#999', textAlign: 'center', margin: 0 }}>By logging in, you agree to the secure transfer of funds.</p>
                   
-                  {/* THE FIX: Button locks down visually and functionally while processing */}
                   <button 
                     type="submit" 
                     disabled={modalStep === 'processing' || modalStep === 'success'}

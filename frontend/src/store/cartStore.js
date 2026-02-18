@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { LEGAL_LIMITS } from '../utils/constants'; 
+import { toast } from 'react-toastify';
 
 const cartFromStorage = localStorage.getItem('cartItems')
   ? JSON.parse(localStorage.getItem('cartItems'))
@@ -29,9 +30,11 @@ const useCartStore = create((set, get) => ({
 
     // Use the constant here instead of the hardcoded 3.0
     if (currentTotalWeight + additionalWeight > LEGAL_LIMITS.MAX_OUNCES_PER_ORDER) {
-      alert(`⚠️ Legal Limit Reached! You cannot exceed ${LEGAL_LIMITS.MAX_OUNCES_PER_ORDER} ounces per order. Please adjust your cart.`);
-      return; 
+      // THE FIX: Swap alert for toast and return false so the UI knows it failed
+      toast.warning(`Legal Limit Reached! Unfortunately you cannot exceed ${LEGAL_LIMITS.MAX_OUNCES_PER_ORDER} ounces per order.`);
+      return false; 
     }
+    
     // 4. Check if the item is already in the cart
     const existingItem = currentCart.find((item) => item._id === product._id);
 
@@ -47,6 +50,9 @@ const useCartStore = create((set, get) => ({
       set({ cartItems: [...currentCart, { ...product, qty }] });
     }
     localStorage.setItem('cartItems', JSON.stringify(get().cartItems));
+    
+    // THE FIX: Return true so the UI knows it successfully added the item
+    return true; 
   },
 
   // Action: Remove an item entirely
