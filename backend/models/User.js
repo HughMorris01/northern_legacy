@@ -2,6 +2,15 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
+  // --- AUTHENTICATION PROVIDERS ---
+  authProvider: {
+    type: String,
+    enum: ['local', 'google', 'facebook'],
+    default: 'local'
+  },
+  googleId: { type: String, sparse: true, unique: true },
+  facebookId: { type: String, sparse: true, unique: true },
+
   email: {
     type: String,
     required: true,
@@ -9,80 +18,56 @@ const userSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
-  firstName: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  lastName: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  preferredFirstName: { 
-    type: String, 
-    default: ''
-   },
-  preferredLastName: { 
-    type: String, 
-    default: '' 
-  },
-  dateOfBirth: {
-    type: String, // String is fine for YYYY-MM-DD formats
-    required: true,
-    default: '1900-01-01', // Temporary default so old accounts don't crash
-  },
-  phoneNumber: {
-    type: String,
-    default: '',
-  },
-  address: { // This is the Primary Delivery Address
-    street: { type: String },
-    city: { type: String },
-    postalCode: { type: String },
-    terrainType: { type: String, default: 'Land' },
-  },
-  mailingAddress: { // The new secondary address
-    street: { type: String },
-    city: { type: String },
-    postalCode: { type: String },
-  },
-  syncAddresses: {
-    type: Boolean,
-    default: false, // Tracks if the user checked the "Sync with Delivery" box
-  },
-  passwordHash: {
-    type: String,
-    required: true
-  },
-  // The unique cryptographic hash of their physical ID to prevent ban evasion
+  
+  // Local Auth (No longer strictly required for OAuth users)
+  passwordHash: { type: String },
   sessionToken: { type: String },
+
+  // --- LEGAL IDENTITY (Populated during ID Verification) ---
+  firstName: { type: String, trim: true },
+  lastName: { type: String, trim: true },
+  dateOfBirth: { 
+    type: String, 
+    default: '1900-01-01' 
+  },
   isVerified: {
     type: Boolean,
     required: true,
     default: false,
   },
-  verificationRefNumber: {
-    type: String
-  },
+  verificationRefNumber: { type: String },
   idDocumentHash: {
     type: String,
     unique: true,
-    sparse: true // Allows accounts to be created before ID verification is complete
+    sparse: true 
   },
   idExpirationDate: {
-    type: String, // String handles both ISO dates and our "Sandbox Mode" placeholder
+    type: String, 
     default: null,
   },
-  syncName: { 
-    type: Boolean, 
-    default: false 
+
+  // --- DIGITAL IDENTITY & CONTACT ---
+  preferredFirstName: { type: String, default: '' },
+  preferredLastName: { type: String, default: '' },
+  syncName: { type: Boolean, default: false },
+  phoneNumber: { type: String, default: '' },
+
+  // --- ADDRESSES & PREFERENCES ---
+  address: { 
+    street: { type: String },
+    city: { type: String },
+    postalCode: { type: String },
+    terrainType: { type: String, default: 'Land' },
   },
-  linkedBank: { 
-    type: String, 
-    default: '' 
-  }, 
-  // Array of timestamps for the 12-month rolling strike logic
+  mailingAddress: { 
+    street: { type: String },
+    city: { type: String },
+    postalCode: { type: String },
+  },
+  syncAddresses: { type: Boolean, default: false },
+  linkedBank: { type: String, default: '' },
+
+  // --- COMPLIANCE & ENFORCEMENT ---
   deliveryStrikes: [{
     type: Date
   }],
@@ -90,24 +75,18 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  // Strict Role-Based Access Control (RBAC)
   role: {
     type: String,
     enum: ['customer', 'admin', 'budtender', 'driver'],
     default: 'customer'
   },
-  smsOptIn: {
-    type: Boolean,
-    default: false
-  },
-  smsOptInTimestamp: {
-    type: Date
-  },
-  // Data privacy compliance
-  isAnonymized: {
-    type: Boolean,
-    default: false
-  },
+  
+  // --- MARKETING & DATA PRIVACY ---
+  smsOptIn: { type: Boolean, default: false },
+  smsOptInTimestamp: { type: Date },
+  isAnonymized: { type: Boolean, default: false },
+  
+  // --- SAVED STATE ---
   savedCart: [
     {
       product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
@@ -115,7 +94,6 @@ const userSchema = new mongoose.Schema({
     }
   ]
 }, {
-  // Automatically manages 'createdAt' and 'updatedAt' timestamps
   timestamps: true 
 });
 
@@ -123,29 +101,22 @@ const userSchema = new mongoose.Schema({
 // 🔐 BCRYPT METHODS
 // ==========================================
 
-// Method to compare the plain text password the user types in 
-// against the scrambled hash saved in the database
 userSchema.methods.matchPassword = async function (enteredPassword) {
+  // Failsafe: If a Google user tries to login with a password, block it
+  if (!this.passwordHash) return false;
   return await bcrypt.compare(enteredPassword, this.passwordHash);
 };
 
-// Mongoose "Pre-Save" Middleware
-// Before saving a user to the database, run this code to hash the password
-// Mongoose "Pre-Save" Middleware
-// Notice: We removed 'next' from the parentheses!
 userSchema.pre('save', async function () {
-  
-  // If the password hasn't been modified (like if they just updated their cart), 
-  // skip this entirely by returning out of the function early.
-  if (!this.isModified('passwordHash')) {
+  // THE FIX: If passwordHash isn't modified OR doesn't exist (OAuth), skip hashing
+  if (!this.isModified('passwordHash') || !this.passwordHash) {
     return; 
   }
 
-  // Generate a cryptographic "salt" (random string added to the password before hashing)
   const salt = await bcrypt.genSalt(10);
-  // Hash the password combined with the salt
   this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
 });
 
-const User = mongoose.model('User', userSchema);
+// THE FIX: Safe compilation check for Nodemon reloads
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 module.exports = User;

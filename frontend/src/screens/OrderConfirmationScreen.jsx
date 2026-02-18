@@ -34,10 +34,25 @@ const OrderConfirmationScreen = () => {
     </div>
   );
 
-  // THE FIX: Cleanly referencing the strict Mongoose keys
   const orderItems = order.items || [];
   const isDelivery = order.orderType === 'Land Delivery' || order.orderType === 'Water Delivery';
   const isPickup = order.orderType === 'In-Store Pickup';
+  const isPrepaid = order.paymentMethod !== 'Pay In-Store';
+
+  // --- DATE & DEADLINE FORMATTERS ---
+  const formatNiceDate = (dateString) => {
+    if (!dateString) return '';
+    const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+    return new Date(dateString).toLocaleDateString('en-US', options);
+  };
+
+  const formatDeadline = (dateString, daysToAdd) => {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    d.setDate(d.getDate() + daysToAdd);
+    // Returns e.g. "Friday, Feb 19 at 9:00 PM"
+    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) + ' at 9:00 PM';
+  };
 
   return (
     <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '20px', fontFamily: 'sans-serif' }}>
@@ -56,7 +71,10 @@ const OrderConfirmationScreen = () => {
           <div style={{ border: '1px solid #eaeaea', padding: '25px', borderRadius: '12px', background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
             <h2 style={{ marginTop: 0, marginBottom: '20px', fontSize: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>Order Details</h2>
             
-            <p style={{ margin: '5px 0 25px 0', fontSize: '1.05rem' }}>
+            <p style={{ margin: '5px 0', fontSize: '1.05rem', color: '#666' }}>
+              <strong>Date Placed: </strong> {formatNiceDate(order.orderPlacedAt || order.createdAt)}
+            </p>
+            <p style={{ margin: '5px 0 25px 0', fontSize: '1.05rem', color: '#666' }}>
               <strong>Payment Method: </strong> {order.paymentMethod}
             </p>
 
@@ -109,15 +127,36 @@ const OrderConfirmationScreen = () => {
               </p>
             )}
 
+            {/* Dynamic Pickup Deadlines */}
+            {isPickup && !isPrepaid && (
+              <p style={{ margin: '8px 0', color: '#d48806', fontWeight: 'bold', fontSize: '1.05rem' }}>
+                <strong>Pickup Deadline: </strong> {formatDeadline(order.orderPlacedAt || order.createdAt, 1)}
+              </p>
+            )}
+            {isPickup && isPrepaid && (
+              <p style={{ margin: '8px 0', color: '#d48806', fontWeight: 'bold', fontSize: '1.05rem' }}>
+                <strong>Pickup Deadline: </strong> {formatDeadline(order.orderPlacedAt || order.createdAt, 7)}
+              </p>
+            )}
+
+            {/* Uses the direct, strict database status enum */}
             <p style={{ margin: '8px 0', fontSize: '1.05rem' }}>
               <strong>Status: </strong> <span style={{ color: order.status === 'Completed' ? '#28a745' : '#111', fontWeight: 'bold' }}>{order.status}</span>
             </p>
 
             {/* CONDITIONAL DISCLAIMERS */}
-            {order.paymentMethod === 'Pay In-Store' && (
+            {isPickup && !isPrepaid && (
               <div style={{ marginTop: '20px', padding: '15px', background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '8px' }}>
                 <p style={{ margin: 0, color: '#d48806', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                  <strong>⚠️ Important:</strong> Your order will be held until close of business the following day. If it is not picked up and paid for by then, the order will be automatically canceled.
+                  <strong>⚠️ Important:</strong> Your order will be held until 9:00 PM tomorrow. If it is not picked up and paid for by the deadline, the order will be automatically canceled.
+                </p>
+              </div>
+            )}
+
+            {isPickup && isPrepaid && (
+              <div style={{ marginTop: '20px', padding: '15px', background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '8px' }}>
+                <p style={{ margin: 0, color: '#d48806', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  <strong>⚠️ Important:</strong> Your prepaid order will be held securely for 7 days. <span style={{ color: '#cf1322' }}>Failure to pick up your order by the deadline will result in order cancellation and a restocking fee penalty.</span>
                 </p>
               </div>
             )}
@@ -125,7 +164,7 @@ const OrderConfirmationScreen = () => {
             {isDelivery && (
               <div style={{ marginTop: '20px', padding: '15px', background: '#e6f7ff', border: '1px solid #91d5ff', borderRadius: '8px' }}>
                 <p style={{ margin: 0, color: '#096dd9', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                  <strong>🚚 Delivery Notice:</strong> The person ordering must be available during the delivery window, along with their physical ID and the QR code provided. An email providing a more specific delivery window will be sent the night before.
+                  <strong>🚚 Delivery Notice:</strong> The person ordering must be available during the delivery window, along with their physical ID and the QR code provided. An email providing a more specific delivery window will be sent the night before. <span style={{ color: '#cf1322', fontWeight: 'bold' }}>Failure to complete the handoff will result in a restocking fee penalty.</span>
                 </p>
               </div>
             )}

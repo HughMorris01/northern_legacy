@@ -48,33 +48,45 @@ const addOrderItems = async (req, res) => {
     calculatedTotalWeight += (product.weightInOunces * item.qty);
   }
 
-  // 2. DETERMINE PRD STATUS & ORDER TYPE
-  const initialStatus = paymentMethod === 'Pay In-Store' ? 'Awaiting Pickup' : 'Paid';
-  
+  // 2. DETERMINE ORDER TYPE & STATUS
   let orderType = 'Land Delivery';
-  if (paymentMethod === 'Pay In-Store') {
+  // We check the address instead of just the payment method so pre-paid pickups work too
+  if (shippingAddress.address === 'In-Store Pickup' || paymentMethod === 'Pay In-Store') {
     orderType = 'In-Store Pickup';
   } else if (shippingAddress.terrainType === 'Water') {
     orderType = 'Water Delivery';
+  }
+
+  let initialStatus;
+  if (orderType === 'In-Store Pickup') {
+    initialStatus = paymentMethod === 'Pay In-Store' ? 'Unpaid-Pending Pickup' : 'Paid-Pending Pickup';
+  } else {
+    // Deliveries are always paid online via Aeropay
+    initialStatus = 'Paid-Pending Delivery'; 
   }
 
   // 3. GENERATE HANDOFF TOKEN
   const handoffToken = `NL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
   // 4. CREATE ORDER
+  const now = new Date(); 
+  const isPrepaid = paymentMethod !== 'Pay In-Store';
+
   const order = new Order({
-    items: validatedItems, // We use our highly secure, DB-hydrated array here
+    items: validatedItems, 
     customerId: req.user._id, 
     orderType: orderType,     
     shippingAddress,
     paymentMethod,
     totalAmount,
-    totalWeightInOunces: calculatedTotalWeight, // Pass the calculated total weight
+    totalWeightInOunces: calculatedTotalWeight, 
     handoffToken,
     status: initialStatus,
+    orderPlacedAt: now,                     // Explicitly stamp placed time
+    orderPaidAt: isPrepaid ? now : undefined, // Stamp paid time if Aeropay used
   });
 
-  const createdOrder = await order.save(); 
+  const createdOrder = await order.save();
 
   // 5. THE DEDUCTION
   for (const item of orderItems) {

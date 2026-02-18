@@ -14,11 +14,20 @@ const orderSchema = new mongoose.Schema({
       name: { type: String, required: true },
       quantity: { type: Number, required: true },
       priceAtPurchase: { type: Number, required: true }, 
-      weightInOunces: { type: Number, required: true }, // Item-level weight for compliance
+      weightInOunces: { type: Number, required: true }, 
       metrcPackageUid: { type: String, required: true }, 
       productId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Product' },
     }
   ],
+
+    // Financials & Compliance Auditing
+  totalAmount: { type: Number, required: true },
+  totalWeightInOunces: { type: Number, required: true }, 
+
+  // --- COMPLIANCE TIMESTAMPS ---
+  orderPlacedAt: { type: Date, default: Date.now },
+  orderPaidAt: { type: Date },
+  orderFulfilledAt: { type: Date },
   
   // Physical routing details
   shippingAddress: {
@@ -38,8 +47,7 @@ const orderSchema = new mongoose.Schema({
   status: { 
     type: String, 
     required: true, 
-    enum: ['Pending', 'Awaiting Pickup', 'Paid', 'Completed', 'Cancelled'], 
-    default: 'Pending' 
+    enum: ['Paid-Pending Delivery', 'Paid-Pending Pickup', 'Unpaid-Pending Pickup', 'Completed', 'Cancelled'] 
   },
   
   // --- STATE COMPLIANCE (METRC) ---
@@ -49,12 +57,8 @@ const orderSchema = new mongoose.Schema({
     default: 'Pending' 
   },
   metrcSalesReceiptId: {
-    type: String // Populated async after the state confirms receipt of the transaction
+    type: String 
   },
-
-  // Financials & Compliance Auditing
-  totalAmount: { type: Number, required: true },
-  totalWeightInOunces: { type: Number, required: true }, // Aggregate order weight
   
   // Future implementations for the Driver App
   handoffToken: { type: String },
@@ -75,5 +79,5 @@ const orderSchema = new mongoose.Schema({
 
 orderSchema.index({ deliveryCoordinates: '2dsphere' });
 
-const Order = mongoose.model('Order', orderSchema);
+const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
 module.exports = Order;
