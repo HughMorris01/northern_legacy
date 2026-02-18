@@ -228,8 +228,8 @@ const products = [
     thcContent: 74.5
   },
   {
-    name: 'Super Lemon Live Badder',
-    brand: 'Hudson Cannabis',
+    name: 'Super Lemon Live G',
+    brand: 'Bullet Train',
     category: 'Concentrate',
     image: '/assets/concentrates/hudson_live_badder.jpg',
     description: 'Whipped to a perfect golden consistency. Extremely terpy and bright.',

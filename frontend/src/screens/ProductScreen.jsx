@@ -68,9 +68,8 @@ const ProductScreen = () => {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'clamp(15px, 3vw, 40px)', background: '#fff', padding: 'clamp(10px, 2vw, 20px)', borderRadius: '12px', border: '1px solid #eaeaea', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', alignItems: 'stretch' }}>
         
         {/* LEFT COLUMN: Image */}
-        <div style={{ flex: '1 1 250px', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: '1 1 300px', position: 'relative', display: 'flex', flexDirection: 'column', minHeight: '250px' }}>
           
-          {/* BADGES */}
           {product.isLimitedRelease && (
             <span style={{ position: 'absolute', top: '10px', left: '-5px', background: '#e0282e', color: 'white', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 'bold', borderRadius: '4px', zIndex: 10, boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
               🔥 Limited
@@ -96,7 +95,12 @@ const ProductScreen = () => {
             src={product.image || '/assets/placeholder.jpg'} 
             alt={product.name} 
             style={{ 
-              width: '100%', height: '100%', maxHeight: 'clamp(180px, 28vh, 600px)', objectFit: 'cover', borderRadius: '8px', 
+              width: '100%', 
+              flex: 1, // THE FIX: Forces the image to grow and fill the vertical space
+              height: '100%', 
+              maxHeight: '600px', // THE FIX: Removed the restrictive 'vh' clamp
+              objectFit: 'cover', 
+              borderRadius: '8px', 
               opacity: isVisualGrayOut ? 0.5 : 1,
               filter: isVisualGrayOut ? 'grayscale(100%)' : 'none',
               transition: 'all 0.3s'
