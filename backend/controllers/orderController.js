@@ -1,61 +1,76 @@
-const Order = require('../models/Order');
-const User = require('../models/User');
+import Order from '../models/Order.js';
+import Product from '../models/Product.js';
 
-// @desc    Create new order
-// @route   POST /api/orders
-// @access  Private (Requires Token)
 const addOrderItems = async (req, res) => {
-  try {
-    const { orderItems, shippingAddress, paymentMethod, totalAmount } = req.body;
+  const {
+    orderItems,
+    shippingAddress,
+    paymentMethod,
+    totalAmount,
+  } = req.body;
 
-    // FIX 1: Properly catch undefined or empty carts
-    if (!orderItems || orderItems.length === 0) {
-      return res.status(400).json({ message: 'No order items' });
-    }
-
-    const itemsForDatabase = orderItems.map((item) => ({
-      name: item.name,
-      quantity: item.qty,
-      priceAtPurchase: item.price,
-      metrcPackageUid: item.metrcPackageUid,
-      productId: item._id, 
-    }));
-
-    let determinedOrderType = 'Land Delivery';
-    if (paymentMethod === 'Pay In-Store') {
-      determinedOrderType = 'In-Store Pickup';
-      
-    // FIX 2: Optional Chaining (?.) prevents a crash if shippingAddress is undefined
-    } else if (shippingAddress?.terrainType === 'Water') {
-      determinedOrderType = 'Water Delivery';
-    }
-
-    const order = new Order({
-      customerId: req.user._id, 
-      items: itemsForDatabase,
-      shippingAddress,
-      paymentMethod,
-      orderType: determinedOrderType,
-      totalAmount,
-    });
-
-    // 1. Save the order to MongoDB
-    const createdOrder = await order.save();
-    
-    // NEW FIX: 2. Find the user and completely empty their saved cart!
-    const user = await User.findById(req.user._id);
-    if (user) {
-      user.savedCart = [];
-      await user.save();
-    }
-    
-    // 3. Send the success response
-    res.status(201).json(createdOrder);
-    
-  } catch (error) {
-    console.error(`Order Creation Error: ${error.message}`);
-    res.status(500).json({ message: 'Server error while creating order' });
+  if (orderItems && orderItems.length === 0) {
+    res.status(400);
+    throw new Error('No order items found');
   }
+
+  // 1. THE RACE-CONDITION CHECK
+  for (const item of orderItems) {
+    const product = await Product.findById(item._id);
+    
+    if (!product) {
+      return res.status(404).json({ message: `Product ${item.name} is no longer available.` });
+    }
+
+    if (product.stockQuantity < item.qty) {
+      return res.status(409).json({
+        message: `Inventory Alert: Someone just grabbed the last of the ${product.name}!`,
+        errorType: 'INVENTORY_SHORTAGE',
+        product: product, 
+        remainingQty: product.stockQuantity
+      });
+    }
+  }
+
+  // 2. DETERMINE PRD STATUS & ORDER TYPE
+  const initialStatus = paymentMethod === 'Pay In-Store' ? 'Awaiting Pickup' : 'Paid';
+  
+  let orderType = 'Land Delivery';
+  if (paymentMethod === 'Pay In-Store') {
+    orderType = 'In-Store Pickup';
+  } else if (shippingAddress.terrainType === 'Water') {
+    orderType = 'Water Delivery';
+  }
+
+  // 3. GENERATE HANDOFF TOKEN
+  const handoffToken = `NL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+  // 4. CREATE ORDER (We do this BEFORE deducting inventory now!)
+  const order = new Order({
+    orderItems: orderItems.map((x) => ({
+      ...x,
+      product: x._id,
+      _id: undefined, 
+    })),
+    customerId: req.user._id, // Fixed: Matched to PRD schema
+    orderType: orderType,     // Fixed: Added missing required field
+    shippingAddress,
+    paymentMethod,
+    totalAmount,
+    handoffToken,
+    status: initialStatus,
+  });
+
+  const createdOrder = await order.save(); // If this fails, the code stops here.
+
+  // 5. THE DEDUCTION (Safe to execute because the order is saved)
+  for (const item of orderItems) {
+    await Product.findByIdAndUpdate(item._id, {
+      $inc: { stockQuantity: -item.qty } 
+    });
+  }
+
+  res.status(201).json(createdOrder);
 };
 
 // @desc    Get order by ID
@@ -100,8 +115,4 @@ const getMyOrders = async (req, res) => {
   }
 };
 
-module.exports = {
-  addOrderItems,
-  getOrderById,
-  getMyOrders,
-};
+export { addOrderItems, getOrderById, getMyOrders};

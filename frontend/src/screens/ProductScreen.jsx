@@ -50,7 +50,12 @@ const ProductScreen = () => {
   };
 
   const strain = getStrainColor(product.strainType);
-  const isCompletelyOutOfStock = product.stockQuantity === 0;
+  
+  // NEW LOGIC: Separating DB stock from Cart logic
+  const isDbOutOfStock = product.stockQuantity === 0;
+  const isCartMaxedOut = product.stockQuantity > 0 && availableStock === 0;
+  const isVisualGrayOut = isDbOutOfStock || isCartMaxedOut; // Triggers the image gray-out
+  
   const isLowStock = product.stockQuantity > 0 && product.stockQuantity <= 5;
 
   return (
@@ -60,22 +65,28 @@ const ProductScreen = () => {
         &larr; Back to Menu
       </Link>
       
-      {/* RESPONSIVE FLEX CONTAINER */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'clamp(15px, 3vw, 40px)', background: '#fff', padding: 'clamp(10px, 2vw, 20px)', borderRadius: '12px', border: '1px solid #eaeaea', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', alignItems: 'stretch' }}>
         
-        {/* LEFT COLUMN: Image (Now fills height on desktop) */}
+        {/* LEFT COLUMN: Image */}
         <div style={{ flex: '1 1 250px', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+          
+          {/* BADGES */}
           {product.isLimitedRelease && (
             <span style={{ position: 'absolute', top: '10px', left: '-5px', background: '#e0282e', color: 'white', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 'bold', borderRadius: '4px', zIndex: 10, boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
               🔥 Limited
             </span>
           )}
-          {isCompletelyOutOfStock && (
+          {isDbOutOfStock && (
             <span style={{ position: 'absolute', top: '10px', right: '-5px', background: '#555', color: 'white', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 'bold', borderRadius: '4px', zIndex: 10 }}>
               Out of Stock
             </span>
           )}
-          {isLowStock && !isCompletelyOutOfStock && (
+          {isCartMaxedOut && (
+            <span style={{ position: 'absolute', top: '10px', right: '-5px', background: '#d48806', color: 'white', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 'bold', borderRadius: '4px', zIndex: 10 }}>
+              Cart Maxed
+            </span>
+          )}
+          {isLowStock && !isDbOutOfStock && !isCartMaxedOut && (
             <span style={{ position: 'absolute', top: '10px', right: '-5px', background: '#ff4d4f', color: 'white', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 'bold', borderRadius: '4px', zIndex: 10 }}>
               Almost Gone!
             </span>
@@ -84,8 +95,12 @@ const ProductScreen = () => {
           <img 
             src={product.image || '/assets/placeholder.jpg'} 
             alt={product.name} 
-            /* Height 100% forces it to fill the desktop box, max-height clamp shrinks it on mobile */
-            style={{ width: '100%', height: '100%', maxHeight: 'clamp(180px, 28vh, 600px)', objectFit: 'cover', borderRadius: '8px', opacity: isCompletelyOutOfStock ? 0.6 : 1 }} 
+            style={{ 
+              width: '100%', height: '100%', maxHeight: 'clamp(180px, 28vh, 600px)', objectFit: 'cover', borderRadius: '8px', 
+              opacity: isVisualGrayOut ? 0.5 : 1,
+              filter: isVisualGrayOut ? 'grayscale(100%)' : 'none',
+              transition: 'all 0.3s'
+            }} 
           />
         </div>
 
@@ -127,9 +142,9 @@ const ProductScreen = () => {
           </div>
           
           {/* CART ENGINE */}
-          {isCompletelyOutOfStock ? (
+          {isDbOutOfStock ? (
             <div style={{ padding: '12px', background: '#f5f5f5', border: '2px dashed #ccc', borderRadius: '8px', textAlign: 'center' }}>
-              <p style={{ color: '#666', fontWeight: 'bold', margin: 0, fontSize: '0.9rem' }}>Currently Unavailable</p>
+              <p style={{ color: '#666', fontWeight: 'bold', margin: 0, fontSize: '0.9rem' }}>Temporarily out of stock!</p>
             </div>
           ) : availableStock > 0 ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'stretch' }}>

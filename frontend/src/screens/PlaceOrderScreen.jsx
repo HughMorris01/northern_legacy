@@ -4,28 +4,30 @@ import useCartStore from '../store/cartStore';
 import CheckoutSteps from '../components/CheckoutSteps';
 import { TAX_RATES } from '../utils/constants'; 
 import axios from '../axios'; 
+import { toast } from 'react-toastify';
 
 const PlaceOrderScreen = () => {
   const navigate = useNavigate();
 
-  // Zustand State
   const cartItems = useCartStore((state) => state.cartItems);
   const shippingAddress = useCartStore((state) => state.shippingAddress);
   const paymentMethod = useCartStore((state) => state.paymentMethod);
   const clearCart = useCartStore((state) => state.clearCart);
+  
+  const addToCart = useCartStore((state) => state.addToCart);
+  const removeFromCart = useCartStore((state) => state.removeFromCart);
 
-  // API & Error State
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [inventoryIssue, setInventoryIssue] = useState(null); 
 
-  // Mock Modal State Machine
+  // Modal State Machine
   const [showModal, setShowModal] = useState(false);
-  const [modalStep, setModalStep] = useState('select-bank'); // select-bank, login, processing, success
+  const [modalStep, setModalStep] = useState('select-bank'); 
   const [selectedBank, setSelectedBank] = useState('');
   const [fakeUsername, setFakeUsername] = useState('');
   const [fakePassword, setFakePassword] = useState('');
 
-  // Security routing
   useEffect(() => {
     if (cartItems.length === 0) return;
 
@@ -38,60 +40,87 @@ const PlaceOrderScreen = () => {
 
   const addDecimals = (num) => (Math.round(num * 100) / 100).toFixed(2);
 
-  // Your Custom Tax Engine
   const itemsPrice = cartItems.reduce((acc, item) => acc + (item.price / 100) * item.qty, 0);
   const exciseTax = itemsPrice * TAX_RATES.EXCISE; 
   const localTax = itemsPrice * TAX_RATES.LOCAL;  
   const stateTax = itemsPrice * TAX_RATES.STATE;  
   const totalPrice = itemsPrice + exciseTax + localTax + stateTax;
 
-  // 1. The button trigger: Decides whether to show modal or process directly
   const triggerOrderHandler = () => {
     if (paymentMethod === 'Aeropay (ACH)') {
+      setModalStep('select-bank'); 
+      setFakeUsername('');
+      setFakePassword('');
       setShowModal(true);
     } else {
       executeFinalOrder();
     }
   };
 
-  // 2. The actual API call (Your original logic)
   const executeFinalOrder = async () => {
     try {
       setLoading(true);
       setError('');
+      setInventoryIssue(null);
 
       const { data } = await axios.post('/api/orders', {
         orderItems: cartItems,
         shippingAddress,
         paymentMethod,
-        totalAmount: totalPrice, // Sends the calculated total
+        totalAmount: totalPrice,
       });
 
       clearCart();
       navigate(`/order/${data._id}`); 
       
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to place order.');
+      if (err.response?.data?.errorType === 'INVENTORY_SHORTAGE' || err.response?.status === 409) {
+        setInventoryIssue(err.response.data);
+        toast.error('Cart update required to proceed.');
+      } else {
+        setError(err.response?.data?.message || 'Failed to place order.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Modal Handlers
+  // THE FIX: Solves the Zustand Accumulator Bug
+  const fixCartHandler = () => {
+    if (inventoryIssue.remainingQty === 0) {
+      removeFromCart(inventoryIssue.product._id);
+      toast.info(`${inventoryIssue.product.name} removed from cart.`);
+      setInventoryIssue(null); 
+    } else {
+      // 1. Wipe the item completely out of the cart first
+      removeFromCart(inventoryIssue.product._id);
+      
+      // 2. Wait a microsecond for Zustand to update, then inject the exact fresh quantity
+      setTimeout(() => {
+        addToCart(inventoryIssue.product, inventoryIssue.remainingQty);
+        toast.success(`Cart corrected to ${inventoryIssue.remainingQty} available units.`);
+        setInventoryIssue(null); 
+      }, 50);
+    }
+  };
+
   const handleBankSelect = (bankName) => {
     setSelectedBank(bankName);
     setModalStep('login');
   };
 
+  // THE FIX: Solves the overlapping timeout freeze
   const handleBankLogin = (e) => {
     e.preventDefault();
+    if (modalStep === 'processing' || modalStep === 'success') return; // Blocks double-clicks
+    
     setModalStep('processing');
     
     setTimeout(() => {
       setModalStep('success');
       setTimeout(() => {
         setShowModal(false);
-        executeFinalOrder(); // Fires the real backend order after fake bank links
+        executeFinalOrder(); 
       }, 1500);
     }, 2000);
   };
@@ -102,14 +131,14 @@ const PlaceOrderScreen = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '40px', marginTop: '30px' }}>
         
-        {/* LEFT COLUMN: Order Details */}
+        {/* LEFT COLUMN: Review Info */}
         <div>
           <div style={{ paddingBottom: '20px', borderBottom: '1px solid #eee', marginBottom: '20px' }}>
             <h2 style={{ marginBottom: '10px' }}>Shipping / Delivery</h2>
             <p><strong>Terrain Type: </strong> {shippingAddress.terrainType}</p>
             <p>
               <strong>Address: </strong> 
-              {shippingAddress.address}, {shippingAddress.city} {shippingAddress.postalCode}, NY
+              {shippingAddress.address}, {shippingAddress.city} {shippingAddress.postalCode}
             </p>
           </div>
 
@@ -139,33 +168,46 @@ const PlaceOrderScreen = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: The Tax & Summary Engine */}
+        {/* RIGHT COLUMN: Order Summary */}
         <div style={{ border: '1px solid #ccc', padding: '25px', borderRadius: '8px', height: 'fit-content', background: '#f9f9f9', position: 'sticky', top: '20px' }}>
           <h2 style={{ marginTop: 0, marginBottom: '20px', borderBottom: '2px solid #ddd', paddingBottom: '10px' }}>Order Summary</h2>
           
-          {error && <div style={{ background: '#ff4d4f', color: 'white', padding: '10px', borderRadius: '5px', marginBottom: '15px' }}>{error}</div>}
+          {error && !inventoryIssue && <div style={{ background: '#ff4d4f', color: 'white', padding: '10px', borderRadius: '5px', marginBottom: '15px' }}>{error}</div>}
+
+          {/* DYNAMIC INVENTORY RESOLUTION UI */}
+          {inventoryIssue && (
+            <div style={{ background: '#fff2f0', border: '1px solid #ffccc7', padding: '15px', borderRadius: '8px', marginBottom: '20px', animation: 'fadeIn 0.3s' }}>
+              <h3 style={{ color: '#cf1322', margin: '0 0 10px 0', fontSize: '1.1rem' }}>⚠️ Cart Adjustment Needed</h3>
+              <p style={{ margin: '0 0 15px 0', color: '#666', fontSize: '0.9rem' }}>{inventoryIssue.message}</p>
+              
+              <button 
+                onClick={fixCartHandler}
+                style={{ width: '100%', padding: '10px', background: '#cf1322', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                {inventoryIssue.remainingQty === 0 
+                  ? `Remove ${inventoryIssue.product.name} from Cart` 
+                  : `Update Cart to ${inventoryIssue.remainingQty} Units`}
+              </button>
+            </div>
+          )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Items:</span>
               <span>${addDecimals(itemsPrice)}</span>
             </div>
-            
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#666' }}>
-              <span>NYS Excise Tax (9%):</span>
+              <span>NYS Excise Tax ({(TAX_RATES.EXCISE * 100).toFixed(0)}%):</span>
               <span>${addDecimals(exciseTax)}</span>
             </div>
-
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#666' }}>
-              <span>Local Retail Tax (4%):</span>
+              <span>Local Retail Tax ({(TAX_RATES.LOCAL * 100).toFixed(0)}%):</span>
               <span>${addDecimals(localTax)}</span>
             </div>
-
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#666' }}>
-              <span>State Sales Tax (4%):</span>
+              <span>State Sales Tax ({(TAX_RATES.STATE * 100).toFixed(0)}%):</span>
               <span>${addDecimals(stateTax)}</span>
             </div>
-
             <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #ddd', paddingTop: '15px', fontWeight: 'bold', fontSize: '1.2rem' }}>
               <span>Total:</span>
               <span>${addDecimals(totalPrice)}</span>
@@ -173,13 +215,13 @@ const PlaceOrderScreen = () => {
 
             <button 
               onClick={triggerOrderHandler}
-              disabled={cartItems.length === 0 || loading}
+              disabled={cartItems.length === 0 || loading || inventoryIssue}
               style={{ 
                 width: '100%', padding: '15px', marginTop: '10px', 
-                background: (cartItems.length === 0 || loading) ? '#ccc' : 'black', 
+                background: (cartItems.length === 0 || loading || inventoryIssue) ? '#ccc' : 'black', 
                 color: 'white', border: 'none', borderRadius: '5px', 
-                cursor: (cartItems.length === 0 || loading) ? 'not-allowed' : 'pointer', 
-                fontSize: '1.1rem', fontWeight: 'bold' 
+                cursor: (cartItems.length === 0 || loading || inventoryIssue) ? 'not-allowed' : 'pointer', 
+                fontSize: '1.1rem', fontWeight: 'bold', transition: 'background 0.3s'
               }}
             >
               {loading ? 'Processing...' : (paymentMethod === 'Aeropay (ACH)' ? 'Link Bank & Place Order' : 'Place Order')}
@@ -220,8 +262,19 @@ const PlaceOrderScreen = () => {
                   <input type="text" placeholder="Online ID" value={fakeUsername} onChange={(e) => setFakeUsername(e.target.value)} style={{ padding: '12px', border: '1px solid #ccc', borderRadius: '4px' }} required />
                   <input type="password" placeholder="Passcode" value={fakePassword} onChange={(e) => setFakePassword(e.target.value)} style={{ padding: '12px', border: '1px solid #ccc', borderRadius: '4px' }} required />
                   <p style={{ fontSize: '0.8rem', color: '#999', textAlign: 'center', margin: 0 }}>By logging in, you agree to the secure transfer of funds.</p>
-                  <button type="submit" style={{ padding: '15px', background: '#1890ff', color: 'white', border: 'none', borderRadius: '5px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer' }}>
-                    Agree & Link Account
+                  
+                  {/* THE FIX: Button locks down visually and functionally while processing */}
+                  <button 
+                    type="submit" 
+                    disabled={modalStep === 'processing' || modalStep === 'success'}
+                    style={{ 
+                      padding: '15px', 
+                      background: (modalStep === 'processing' || modalStep === 'success') ? '#ccc' : '#1890ff', 
+                      color: 'white', border: 'none', borderRadius: '5px', fontSize: '1.1rem', fontWeight: 'bold', 
+                      cursor: (modalStep === 'processing' || modalStep === 'success') ? 'not-allowed' : 'pointer' 
+                    }}
+                  >
+                    {modalStep === 'processing' || modalStep === 'success' ? 'Linking Account...' : 'Agree & Link Account'}
                   </button>
                 </form>
               </div>
