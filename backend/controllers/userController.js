@@ -1,7 +1,10 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const bcrypt = require('bcryptjs');
+const { OAuth2Client } = require('google-auth-library');
 const crypto = require('crypto');
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // @desc    Auth user & get token
 // @route   POST /api/users/login
@@ -39,6 +42,71 @@ const authUser = async (req, res) => {
   } catch (error) {
     console.error(`Login Error: ${error.message}`);
     res.status(500).json({ message: 'Server error during login' });
+  }
+};
+
+// @desc    Auth with Google
+// @route   POST /api/users/google
+// @access  Public
+const googleAuth = async (req, res) => {
+  try {
+    const { credential } = req.body; 
+
+    // 1. Verify the token with Google's secure servers
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    // 2. Extract the user info from the payload
+    const { email, given_name, family_name, sub: googleId } = ticket.getPayload();
+
+    // 3. Check for Account Collision
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // User exists. Did they sign up manually before? Link the Google ID seamlessly!
+      if (!user.googleId) {
+        user.googleId = googleId;
+        await user.save();
+      }
+    } else {
+      // 4. Create a brand new passwordless user
+      // COMPLIANCE: Notice we put the names in 'preferred', leaving strict legal fields blank!
+      user = await User.create({
+        email,
+        authProvider: 'google',
+        googleId,
+        preferredFirstName: given_name || '',
+        preferredLastName: family_name || '',
+        isVerified: false, 
+      });
+    }
+
+    // 5. Generate session token and log them in
+    const currentSessionToken = crypto.randomBytes(20).toString('hex');
+    user.sessionToken = currentSessionToken;
+    await user.save();
+
+    generateToken(res, user._id, currentSessionToken);
+
+    // Send back the exact same payload as a standard login
+    res.json({
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      preferredFirstName: user.preferredFirstName,
+      preferredLastName: user.preferredLastName,
+      syncName: user.syncName,
+      email: user.email,
+      role: user.role,
+      isVerified: user.isVerified,
+      idExpirationDate: user.idExpirationDate,
+    });
+
+  } catch (error) {
+    console.error(`Google Auth Error: ${error.message}`);
+    res.status(401).json({ message: 'Google authentication failed' });
   }
 };
 
@@ -304,6 +372,7 @@ const deleteAccount = async (req, res) => {
 
 module.exports = {
   authUser,
+  googleAuth,
   logoutUser,
   registerUser,
   saveUserCart,

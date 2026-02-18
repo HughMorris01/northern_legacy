@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
-const { authUser, logoutUser, registerUser, saveUserCart, getUserCart, deleteAccount, getUserProfile, updateUserProfile } = require('../controllers/userController');
+const { authUser, logoutUser, registerUser, saveUserCart, getUserCart, deleteAccount, getUserProfile, updateUserProfile, googleAuth } = require('../controllers/userController');
 
-// When a POST request hits /api/users/login, trigger the authUser function
 router.post('/login', authUser);
+
+router.post('/google', googleAuth);
 
 // When a POST request hits /api/users/logout, trigger the logoutUser function
 router.post('/logout', logoutUser);

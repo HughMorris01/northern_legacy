@@ -13,7 +13,7 @@ import PlaceOrderScreen from './screens/PlaceOrderScreen';
 import OrderConfirmationScreen from './screens/OrderConfirmationScreen';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
-import ProfileScreen from './screens/ProfileScreen';
+import ProfileDashboardScreen from './screens/ProfileDashboardScreen';
 import EditContactScreen from './screens/EditContactScreen';
 import EditDeliveryScreen from './screens/EditDeliveryScreen';
 import EditBankScreen from './screens/EditBankScreen';
@@ -38,7 +38,7 @@ const App = () => {
             <Route path="/payment" element={<PaymentScreen />} />
             <Route path="/placeorder" element={<PlaceOrderScreen />} />
             <Route path="/order/:id" element={<OrderConfirmationScreen />} />
-            <Route path="/profile" element={<ProfileScreen />} />
+            <Route path="/profile" element={<ProfileDashboardScreen />} />
             <Route path="/verify" element={<VerificationScreen />} />
             <Route path="/profile/contact" element={<EditContactScreen />} />
             <Route path="/profile/delivery" element={<EditDeliveryScreen />} />

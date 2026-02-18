@@ -1,106 +1,143 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import axios from '../axios'; // Using custom configured Axios
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import axios from '../axios';
 import useAuthStore from '../store/authStore';
-import useCartStore from '../store/cartStore';
+import { toast } from 'react-toastify';
+import Loader from '../components/Loader';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const location = useLocation();
+  const { search } = useLocation();
+  const sp = new URLSearchParams(search);
+  const redirect = sp.get('redirect') || '/profile'; // Defaults to dashboard on login
 
-  // Pulling our Zustand state and actions
-  const setCredentials = useAuthStore((state) => state.setCredentials);
   const userInfo = useAuthStore((state) => state.userInfo);
-  const mergeCarts = useCartStore((state) => state.mergeCarts);
+  const setCredentials = useAuthStore((state) => state.setCredentials);
 
-  // If they were redirected here from the cart, we want to send them back there after login
-  const urlRedirect = location.search ? location.search.split('=')[1] : '/';
-  const redirect = urlRedirect.startsWith('/') ? urlRedirect : `/${urlRedirect}`;
-
-  // If the user is already logged in, push them away from the login screen
+  // If already logged in, push them away from the login screen
   useEffect(() => {
     if (userInfo) {
       navigate(redirect);
     }
   }, [navigate, redirect, userInfo]);
 
+  // --- STANDARD EMAIL LOGIN ---
   const submitHandler = async (e) => {
-    e.preventDefault(); // Prevents the page from refreshing on form submit
-    setError(''); // Clear any previous errors
-
+    e.preventDefault();
     try {
-      // Hit our new backend endpoint
+      setLoading(true);
       const { data } = await axios.post('/api/users/login', { email, password });
-      
-      // Save the user data to Zustand and localStorage
       setCredentials(data);
-      
-      // Send them to the homepage (or back to their cart)
+      toast.success('Login successful!');
       navigate(redirect);
     } catch (err) {
-      // If the backend sends back a 401 Unauthorized, display the error message
-      setError(err.response?.data?.message || 'Invalid email or password');
+      toast.error(err.response?.data?.message || 'Invalid email or password');
+      setLoading(false);
     }
-    // Fetch the user's saved cart from the database
-    const { data: dbCart } = await axios.get('/api/users/cart');
-    
-    // Merge it with any anonymous items currently in local storage
-    const mergedCart = mergeCarts(dbCart);
-    
-    // Immediately sync the newly merged cart back up to the database
-    await axios.put('/api/users/cart', { cartItems: mergedCart });
   };
 
-  return (
-    <div style={{ maxWidth: '400px', margin: '40px auto', padding: '20px', fontFamily: 'sans-serif' }}>
-      <h1 style={{ textAlign: 'center' }}>Sign In</h1>
+  // --- GOOGLE OAUTH LOGIN ---
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      setLoading(true);
+      // Send the secure Google token to our new backend route
+      const { data } = await axios.post('/api/users/google', {
+        credential: credentialResponse.credential,
+      });
       
-      {error && (
-        <div style={{ background: '#ff4d4f', color: 'white', padding: '10px', borderRadius: '5px', marginBottom: '20px', textAlign: 'center' }}>
-          {error}
+      setCredentials(data);
+      toast.success('Successfully authenticated with Google!');
+      navigate(redirect);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Google authentication failed');
+      setLoading(false);
+    }
+  };
+
+  // Pull the Client ID from your frontend .env file
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+  return (
+    <div style={{ maxWidth: '450px', margin: '60px auto', padding: '0 15px', fontFamily: 'sans-serif' }}>
+      <div style={{ background: '#fff', padding: '40px 30px', borderRadius: '12px', border: '1px solid #eaeaea', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+        
+        <h1 style={{ textAlign: 'center', margin: '0 0 10px 0', fontSize: '2rem' }}>Welcome Back</h1>
+        <p style={{ textAlign: 'center', color: '#666', marginBottom: '30px' }}>Sign in to access your dashboard and order history.</p>
+
+        {/* GOOGLE BUTTON BLOCK */}
+        {clientId ? (
+          <GoogleOAuthProvider clientId={clientId}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => toast.error('Google popup closed or failed to initialize.')}
+                theme="outline"
+                size="large"
+                width="100%"
+                text="signin_with"
+                shape="rectangular"
+              />
+            </div>
+          </GoogleOAuthProvider>
+        ) : (
+          <div style={{ padding: '10px', background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '5px', textAlign: 'center', marginBottom: '20px' }}>
+            <p style={{ margin: 0, color: '#d48806', fontSize: '0.85rem' }}>⚠️ Google Client ID is missing from .env</p>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', margin: '25px 0' }}>
+          <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #eee' }} />
+          <span style={{ padding: '0 15px', color: '#999', fontSize: '0.85rem', fontWeight: 'bold' }}>OR SIGN IN WITH EMAIL</span>
+          <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #eee' }} />
         </div>
-      )}
 
-      <form onSubmit={submitHandler} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        <div>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Email Address</label>
-          <input 
-            type="email" 
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-            required
-          />
+        {/* STANDARD FORM */}
+        <form onSubmit={submitHandler} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div>
+            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', color: '#333' }}>Email Address</label>
+            <input 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required
+              style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '6px', boxSizing: 'border-box', fontSize: '1rem' }} 
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', color: '#333' }}>Password</label>
+            <input 
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required
+              style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '6px', boxSizing: 'border-box', fontSize: '1rem' }} 
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={loading}
+            style={{ width: '100%', padding: '14px', background: 'black', color: 'white', border: 'none', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 'bold', cursor: loading ? 'not-allowed' : 'pointer', marginTop: '10px', transition: 'background 0.2s' }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#333'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'black'}
+          >
+            {loading ? <Loader /> : 'Sign In'}
+          </button>
+        </form>
+
+        <div style={{ marginTop: '25px', textAlign: 'center', fontSize: '0.95rem', color: '#555' }}>
+          New customer?{' '}
+          <Link to={redirect ? `/register?redirect=${redirect}` : '/register'} style={{ color: '#1890ff', textDecoration: 'none', fontWeight: 'bold' }}>
+            Create an account
+          </Link>
         </div>
 
-        <div>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Password</label>
-          <input 
-            type="password" 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-            required
-          />
-        </div>
-
-        <button 
-          type="submit" 
-          style={{ padding: '12px', background: 'black', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold', marginTop: '10px' }}
-        >
-          Sign In
-        </button>
-      </form>
-
-      <div style={{ marginTop: '20px', textAlign: 'center' }}>
-        New Customer?{' '}
-        <Link to={redirect ? `/register?redirect=${redirect}` : '/register'} style={{ color: 'blue', textDecoration: 'none' }}>
-          Register Here
-        </Link>
       </div>
     </div>
   );

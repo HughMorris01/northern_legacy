@@ -5,7 +5,7 @@ import useAuthStore from '../store/authStore';
 import Loader from '../components/Loader';
 import { toast } from 'react-toastify';
 
-const ProfileScreen = () => { 
+const ProfileDashboardScreen = () => { 
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
 
@@ -91,13 +91,8 @@ const ProfileScreen = () => {
                 <button onClick={() => navigate('/verify')} style={{ padding: '12px 25px', background: '#cf1322', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', width: '100%' }}>
                   Verify Identity Now
                 </button>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', marginTop: '15px', color: '#888', fontSize: '0.85rem' }}>
-                  <span>🔒 Securely powered by:</span>
-                  <span style={{ fontWeight: 'bold', color: '#555' }}>Apple</span>
-                  <span>|</span>
-                  <span style={{ fontWeight: 'bold', color: '#555' }}>Google</span>
-                  <span>|</span>
-                  <span style={{ fontWeight: 'bold', color: '#555' }}>Persona</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '15px', color: '#888', fontSize: '0.8rem', textAlign: 'center', lineHeight: '1.4' }}>
+                  <span>🔒 Identity verification securely vaulted via <strong>Persona</strong>. Encrypted with AES-256 and SOC2 Type II compliance.</span>
                 </div>
               </div>
             )}
@@ -106,9 +101,15 @@ const ProfileScreen = () => {
           {/* LEGAL IDENTITY FIELDS (Locked) */}
           <div style={{ background: '#f5f5f5', padding: '20px', borderRadius: '8px', border: '1px solid #e8e8e8', marginBottom: '25px' }}>
             <h3 style={{ margin: '0 0 15px 0', fontSize: '1.2rem', color: '#111', borderBottom: '1px solid #ddd', paddingBottom: '10px' }}>Legal Identity</h3>
-            <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem' }}><strong>Full Legal Name:</strong> {profileData?.firstName} {profileData?.lastName}</p>
-            <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem' }}><strong>Date of Birth:</strong> {profileData?.dateOfBirth || 'Not Provided'}</p>
-            <p style={{ margin: 0, fontSize: '1.05rem' }}><strong>ID Expiration Date:</strong> {profileData?.idExpirationDate || 'Not Provided'}</p>
+            <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem' }}>
+              <strong>Full Legal Name:</strong> {profileData?.isVerified ? `${profileData?.firstName} ${profileData?.lastName}` : <span style={{ color: '#999', fontStyle: 'italic' }}>Pending Verification</span>}
+            </p>
+            <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem' }}>
+              <strong>Date of Birth:</strong> {profileData?.isVerified && profileData?.dateOfBirth !== '1900-01-01' ? profileData.dateOfBirth : <span style={{ color: '#999', fontStyle: 'italic' }}>Pending Verification</span>}
+            </p>
+            <p style={{ margin: 0, fontSize: '1.05rem' }}>
+              <strong>ID Expiration Date:</strong> {profileData?.isVerified && profileData?.idExpirationDate ? profileData.idExpirationDate : <span style={{ color: '#999', fontStyle: 'italic' }}>Pending Verification</span>}
+            </p>
           </div>
 
           {/* CONTACT INFO FIELDS */}
@@ -120,7 +121,6 @@ const ProfileScreen = () => {
               </button>
             </div>
             
-            {/* UPDATED: Dynamic Digital Name Field */}
             <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem' }}>
               <strong>Digital Name:</strong> {displayFirstName} {displayLastName}
               {profileData?.syncName && <span style={{ fontSize: '0.8rem', color: '#1890ff', marginLeft: '10px', fontWeight: 'bold' }}>(Synced to Legal)</span>}
@@ -271,4 +271,4 @@ const ProfileScreen = () => {
   );
 };
 
-export default ProfileScreen;
+export default ProfileDashboardScreen;
