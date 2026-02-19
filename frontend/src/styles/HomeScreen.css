@@ -1,5 +1,13 @@
 /* frontend/src/styles/HomeScreen.css */
 
+.product-grid-container {
+    display: grid;
+    /* Default mobile gap and column sizing */
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
+    gap: 12px; /* Squeezed from 20px */
+    margin-top: 10px;
+}
+
 /* --- Default Mobile Styles (Tight & Condensed) --- */
 .product-grid-card {
     border: 1px solid #eaeaea;
@@ -8,7 +16,7 @@
     background: #fff;
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     transition: all 0.3s;
-    padding: 12px; /* Tighter padding */
+    padding: 10px; /* Squeezed from 12px */
 }
 
 .product-grid-card.gray-out {
@@ -19,8 +27,8 @@
     width: 100%;
     object-fit: cover;
     border-radius: 8px;
-    height: 140px; /* Shorter image height */
-    margin-bottom: 10px; /* Less white space */
+    height: 160px; /* INCREASED from 140px */
+    margin-bottom: 6px; /* Squeezed from 10px */
 }
 
 .product-grid-image.gray-out {
@@ -28,21 +36,22 @@
 }
 
 .product-grid-title {
-    margin: 0 0 5px 0;
-    font-size: 1.1rem;
+    margin: 0 0 2px 0; /* Squeezed from 5px */
+    font-size: 1.05rem; /* Squeezed from 1.1rem */
+    line-height: 1.2;
 }
 
 .product-grid-brand {
     color: #666;
-    font-size: 0.8rem;
-    margin: 0 0 2px 0; /* Tighter spacing */
+    font-size: 0.75rem; /* Squeezed from 0.8rem */
+    margin: 0 0 2px 0; 
 }
 
 .product-grid-thc {
     font-weight: bold;
     color: #333;
-    font-size: 0.9rem;
-    margin: 0 0 10px 0;
+    font-size: 0.85rem; /* Squeezed from 0.9rem */
+    margin: 0 0 6px 0; /* Squeezed from 10px */
 }
 
 .product-grid-footer {
@@ -50,16 +59,20 @@
     justify-content: space-between;
     align-items: center;
     border-top: 1px solid #f0f0f0;
-    padding-top: 10px;
+    padding-top: 8px; /* Squeezed from 10px */
 }
 
 .product-grid-price {
     font-weight: bold;
-    font-size: 1.1rem;
+    font-size: 1.05rem; 
 }
 
 /* --- Desktop Breakpoint (Spacious & Restored) --- */
 @media (min-width: 768px) {
+    .product-grid-container {
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 25px; /* Restored spacious gap */
+    }
     .product-grid-card {
         padding: 20px;
     }

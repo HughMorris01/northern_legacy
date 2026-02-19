@@ -4,7 +4,7 @@ import axios from '../axios';
 import Loader from '../components/Loader';
 import DeliveryChecker from '../components/DeliveryChecker';
 import useCartStore from '../store/cartStore';
-import '../styles/HomeScreen.css'; // <-- NEW CSS IMPORT
+import '../styles/HomeScreen.css'; 
 
 const HomeScreen = () => {
   const location = useLocation();
@@ -125,7 +125,8 @@ const HomeScreen = () => {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px', marginTop: '10px' }}>
+      {/* THE FIX: Replaced inline grid styles with the new product-grid-container CSS class */}
+      <div className="product-grid-container">
         {filteredProducts.map((product) => {
           const strain = getStrainColor(product.strainType);
           
@@ -139,7 +140,6 @@ const HomeScreen = () => {
           const isLowStock = availableStock > 0 && availableStock <= 5;
 
           return (
-            /* APPLIED NEW CSS CLASSES HERE */
             <div key={product._id} className={`product-grid-card ${isVisualGrayOut ? 'gray-out' : ''}`}>
               
               {isDbOutOfStock && (
