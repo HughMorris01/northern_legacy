@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import axios from '../axios';
 import Loader from '../components/Loader';
 import DeliveryChecker from '../components/DeliveryChecker';
-import useCartStore from '../store/cartStore'; // NEW: Imported Cart Store
+import useCartStore from '../store/cartStore';
 
 const HomeScreen = () => {
   const location = useLocation();
@@ -15,7 +15,6 @@ const HomeScreen = () => {
   
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  // NEW: Grab the cart items to calculate dynamic local stock
   const cartItems = useCartStore((state) => state.cartItems);
 
   useEffect(() => {
@@ -60,22 +59,22 @@ const HomeScreen = () => {
       <DeliveryChecker />
 
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', borderBottom: '2px solid #eee', paddingBottom: '15px', marginBottom: '20px', flexWrap: 'wrap', gap: '25px' }}>
-        <div><a 
-          href="https://NorthernLegacyMerch.com" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          style={{ 
-            display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', 
-            background: 'linear-gradient(135deg, #1a1a1a 0%, #434343 100%)', 
-            color: 'white', textDecoration: 'none', borderRadius: '30px', 
-            fontWeight: 'bold', fontSize: '0.9rem', boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
-            transition: 'transform 0.2s'
-          }}
-          onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-          onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          👕 Shop Official Merch
-        </a>
+        <div>
+          {/* THE FIX: Replaced the external <a> tag with an internal <Link> */}
+          <Link 
+            to="/merch" 
+            style={{ 
+              display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', 
+              background: 'linear-gradient(135deg, #1a1a1a 0%, #434343 100%)', 
+              color: 'white', textDecoration: 'none', borderRadius: '30px', 
+              fontWeight: 'bold', fontSize: '0.9rem', boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+              transition: 'transform 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            👕 Shop Official Merch
+          </Link>
         </div>
         <div style={{textAlign:"center", display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center"}}>
           <h2 style={{ margin:"auto" }}>Northern Legacy Menu</h2>
@@ -130,7 +129,6 @@ const HomeScreen = () => {
         {filteredProducts.map((product) => {
           const strain = getStrainColor(product.strainType);
           
-          // THE FIX: Dynamic Availability Engine
           const existItem = cartItems.find((x) => x._id === product._id);
           const qtyInCart = existItem ? existItem.qty : 0;
           const availableStock = (product.stockQuantity || 0) - qtyInCart;

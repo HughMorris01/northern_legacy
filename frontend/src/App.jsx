@@ -4,6 +4,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Header from './components/Header';
 import HomeScreen from './screens/HomeScreen';
+import MerchScreen from './screens/MerchScreen';
 import ProductScreen from './screens/ProductScreen';
 import CartScreen from './screens/CartScreen';
 import OrderTypeScreen from './screens/OrderTypeScreen';
@@ -29,6 +30,7 @@ const App = () => {
         <main>
           <Routes>
             <Route path="/" element={<HomeScreen />} />
+            <Route path="/merch" element={<MerchScreen />} />
             <Route path="/product/:id" element={<ProductScreen />} />
             <Route path="/cart" element={<CartScreen />} />
             <Route path="/login" element={<LoginScreen />} />
