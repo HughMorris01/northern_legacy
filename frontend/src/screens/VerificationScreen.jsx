@@ -9,57 +9,66 @@ const VerificationScreen = () => {
   
   const [status, setStatus] = useState('pending'); // pending, success, canceled, error
 
-  const queryParams = new URLSearchParams(window.location.search);
-  const redirect = queryParams.get('redirect') || '/profile';
-
   useEffect(() => {
     // Security: Kick them out if they aren't logged in
     if (!userInfo) {
-      navigate(`/login?redirect=${redirect}`);
+      navigate('/login');
     } 
-    // THE FIX: Only bounce them automatically if they load the page already verified
-    else if (userInfo.isVerified && status === 'pending') {
-      navigate(redirect);
+    // UX: If they are already verified, redirect them to their profile
+    else if (userInfo.isVerified) {
+      navigate('/profile');
     }
-  }, [userInfo, navigate, redirect, status]);
+  }, [userInfo, navigate]);
+
+  const queryParams = new URLSearchParams(window.location.search);
+  const redirect = queryParams.get('redirect') || '/profile';
 
   return (
     <div style={{ maxWidth: '800px', margin: '40px auto', padding: '20px', textAlign: 'center', fontFamily: 'sans-serif' }}>
       <h1 style={{ marginBottom: '10px' }}>Verify Your Identity</h1>
-      <p style={{ color: '#666', marginBottom: '30px', fontSize: '1.1rem' }}>
-        To comply with state regulations, you must verify your age using a valid government-issued ID.
-      </p>
-      <p>You dont have to actually provide an id here right now, just aim at your hand or something for a few seconds then tap the screen and a button should pop up to snap a photo. There is a little slider that gets in the way of the button, this is a plug-in in sandbox mode right now and I cant move that. After that you do gotta take 3 phots of your face</p>
-
+      
       {status === 'pending' && (
-        <div style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '20px', background: '#f9f9f9', minHeight: '800px', display: 'flex', justifyContent: 'center' }}>
-          
-          <PersonaReact
-            templateId="itmpl_JFujKwyQDksMLZGvVdk2vSn7k984" 
-            environment="sandbox" 
-            referenceId={userInfo?._id} 
-            onReady={() => console.log('Persona UI loaded')}
-            onComplete={({ inquiryId }) => {
-              setStatus('success');
-              
-              useAuthStore.getState().setCredentials({ 
-                ...userInfo, 
-                isVerified: true,
-                idExpirationDate: 'Sandbox Mode',
-                verificationRefNumber: inquiryId 
-              });
-            }}
-            onCancel={() => { 
-              console.log('User canceled the flow');
-              setStatus('canceled');
-            }}
-            onError={(error) => {
-              console.error('Persona Error:', error.message);
-              setStatus('error');
-            }}
-          />
-          
-        </div>
+        <>
+          {/* THE FIX: Highly visible tester instructions to contextualize the scary pink box */}
+          <div style={{ background: '#e6f7ff', border: '1px solid #91d5ff', padding: '20px', borderRadius: '8px', marginBottom: '30px', textAlign: 'left', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <h3 style={{ color: '#096dd9', margin: '0 0 15px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              🧪 Beta Tester Instructions
+            </h3>
+            <ul style={{ margin: 0, paddingLeft: '20px', color: '#333', lineHeight: '1.6', fontSize: '1.05rem' }}>
+              <li><strong>Ignore the Pink Warning:</strong> The system will display a pink "Sandbox" security warning. This is normal for test mode. Simply click the "X" to close it.</li>
+              <li><strong>No Real ID Needed:</strong> Just aim your camera at your hand or a random object for a few seconds.</li>
+              <li><strong>Taking the Photo:</strong> Tap the screen and a capture button will appear. (Note: the sandbox slider might overlap the button, just click around it).</li>
+              <li><strong>Face Scan:</strong> After the ID step, it will ask for 3 quick photos of your face to complete the test.</li>
+            </ul>
+          </div>
+
+          <div style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '20px', background: '#f9f9f9', minHeight: '800px', display: 'flex', justifyContent: 'center' }}>
+            <PersonaReact
+              templateId="itmpl_JFujKwyQDksMLZGvVdk2vSn7k984" 
+              environment="sandbox" 
+              referenceId={userInfo?._id} 
+              onReady={() => console.log('Persona UI loaded')}
+              onComplete={({ inquiryId }) => {
+                setStatus('success');
+                
+                useAuthStore.getState().setCredentials({ 
+                  ...userInfo, 
+                  isVerified: true,
+                  idExpirationDate: 'Sandbox Mode',
+                  verificationRefNumber: inquiryId 
+                });
+              }}
+              onCancel={() => { 
+                console.log('User canceled the flow');
+                setStatus('canceled');
+              }}
+              onError={(error) => {
+                console.error('Persona Error:', error.message);
+                setStatus('error');
+              }}
+            />
+          </div>
+        </>
       )}
 
       {/* --- FEEDBACK STATES --- */}
@@ -70,8 +79,7 @@ const VerificationScreen = () => {
             Your ID has been scanned securely. Our system is updating your profile.
           </p>
           <button 
-            // THE FIX: Dynamically navigates to the redirect route instead of hardcoding '/profile'
-            onClick={() => navigate(redirect)}
+            onClick={() => navigate('/profile')}
             style={{ padding: '12px 24px', background: 'black', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold' }}
           >
           {redirect === '/profile' ? 'Return to Profile' : 'Continue to Checkout'}
