@@ -12,7 +12,25 @@ const shippingAddressFromStorage = localStorage.getItem('shippingAddress')
 
 const paymentMethodFromStorage = localStorage.getItem('paymentMethod')
   ? JSON.parse(localStorage.getItem('paymentMethod'))
-  : 'Aeropay (ACH)'; // Defaulting to the compliant digital gateway
+  : 'Aeropay (ACH)';
+
+// --- LEGAL COMPLIANCE LIMITS ---
+const FLOWER_CATEGORIES = ['Flower', 'Pre-Roll'];
+const CONCENTRATE_CATEGORIES = ['Concentrate', 'Vape', 'Edible', 'Tincture'];
+const LIMIT_FLOWER_OZ = 3.0; // NY Limit
+const LIMIT_CONCENTRATE_G = 24.0; // NY Limit
+
+// Helper to determine accurate concentrate weight in grams
+const getConcentrateGrams = (item) => {
+  if (item.concentrateGrams) return item.concentrateGrams; // If you ever add this field to DB
+  if (item.weightInOunces > 0) return Number((item.weightInOunces * 28.3495).toFixed(2));
+  if (item.category === 'Edible' || item.category === 'Tincture') return 1.0; // Safe default for 100mg edibles
+  return 0;
+};
+
+const getFlowerOunces = (item) => {
+  return item.weightInOunces || 0;
+};
 
 const useCartStore = create((set, get) => ({
   cartItems: cartFromStorage,
@@ -22,39 +40,53 @@ const useCartStore = create((set, get) => ({
   addToCart: (product, qty) => {
     const currentCart = get().cartItems;
     
-    const currentTotalWeight = currentCart.reduce((total, item) => {
-      return total + (item.weightInOunces * item.qty);
-    }, 0);
+    let currentFlowerWeight = 0;
+    let currentConcentrateWeight = 0;
 
-    const additionalWeight = product.weightInOunces * qty;
+    currentCart.forEach(item => {
+      if (FLOWER_CATEGORIES.includes(item.category)) {
+        currentFlowerWeight += getFlowerOunces(item) * item.qty;
+      } else if (CONCENTRATE_CATEGORIES.includes(item.category)) {
+        currentConcentrateWeight += getConcentrateGrams(item) * item.qty;
+      }
+    });
 
-    // Use the constant here instead of the hardcoded 3.0
-    if (currentTotalWeight + additionalWeight > LEGAL_LIMITS.MAX_OUNCES_PER_ORDER) {
-      toast.warning(`Legal Limit Reached! Unfortunately you cannot exceed ${LEGAL_LIMITS.MAX_OUNCES_PER_ORDER} ounces per order.`);
+    const isFlower = FLOWER_CATEGORIES.includes(product.category);
+    const isConcentrate = CONCENTRATE_CATEGORIES.includes(product.category);
+
+    const addedFlower = isFlower ? getFlowerOunces(product) * qty : 0;
+    const addedConcentrate = isConcentrate ? getConcentrateGrams(product) * qty : 0;
+
+    const limitFlower = LEGAL_LIMITS?.MAX_OUNCES_PER_ORDER || LIMIT_FLOWER_OZ;
+    const limitConcentrate = LIMIT_CONCENTRATE_G;
+
+    // Dual-Limit Checks
+    if (currentFlowerWeight + addedFlower > limitFlower) {
+      toast.warning(`Legal Limit Reached! You cannot exceed ${limitFlower} ounces of flower per order.`);
+      return false; 
+    }
+
+    if (currentConcentrateWeight + addedConcentrate > limitConcentrate) {
+      toast.warning(`Legal Limit Reached! You cannot exceed ${limitConcentrate}g of concentrates/edibles per order.`);
       return false; 
     }
     
-    // Check if the item is already in the cart
     const existingItem = currentCart.find((item) => item._id === product._id);
 
     if (existingItem) {
-      // If it exists, just update the quantity
       set({
         cartItems: currentCart.map((item) =>
           item._id === product._id ? { ...item, qty: item.qty + qty } : item
         ),
       });
     } else {
-      // If it's a new item, add it to the array
       set({ cartItems: [...currentCart, { ...product, qty }] });
     }
     localStorage.setItem('cartItems', JSON.stringify(get().cartItems));
     
-    // Return true so the UI knows it successfully added the item
     return true; 
   },
 
-  // Action: Remove an item entirely
   removeFromCart: (productId) => {
     set({
       cartItems: get().cartItems.filter((item) => item._id !== productId),
@@ -74,17 +106,12 @@ const useCartStore = create((set, get) => ({
 
   clearCart: () => {
     const currentAddress = get().shippingAddress;
-    
-    // If they used the pickup placeholder, wipe it so the next order safely defaults to Delivery
     if (currentAddress?.address === 'In-Store Pickup') {
       set({ cartItems: [], shippingAddress: {} });
       localStorage.removeItem('shippingAddress');
     } else {
-      // If it's a real delivery address, keep it safe in Zustand and LocalStorage for the pre-fill!
       set({ cartItems: [] });
     }
-    
-    // Always empty the cart items
     localStorage.removeItem('cartItems');
   },
 
@@ -92,34 +119,44 @@ const useCartStore = create((set, get) => ({
     const localCart = get().cartItems;
     let mergedCart = [...localCart];
 
-    // Calculate current weight of the local anonymous cart
-    let currentWeight = mergedCart.reduce((total, item) => total + (item.weightInOunces * item.qty), 0);
+    let currentFlowerWeight = mergedCart.reduce((total, item) => 
+      FLOWER_CATEGORIES.includes(item.category) ? total + (getFlowerOunces(item) * item.qty) : total, 0);
+    
+    let currentConcentrateWeight = mergedCart.reduce((total, item) => 
+      CONCENTRATE_CATEGORIES.includes(item.category) ? total + (getConcentrateGrams(item) * item.qty) : total, 0);
+
+    const limitFlower = LEGAL_LIMITS?.MAX_OUNCES_PER_ORDER || LIMIT_FLOWER_OZ;
+    const limitConcentrate = LIMIT_CONCENTRATE_G;
 
     dbCartItems.forEach((dbItem) => {
       const existingItem = mergedCart.find((item) => item._id === dbItem._id);
+      const isFlower = FLOWER_CATEGORIES.includes(dbItem.category);
+      const isConcentrate = CONCENTRATE_CATEGORIES.includes(dbItem.category);
 
       if (existingItem) {
-        // If the item is in both carts, take the highest quantity to prevent double-counting
-        // (e.g., if they had 2 in DB, logged out, and added 2 anonymously, we keep it at 2, not 4)
         const newQty = Math.max(existingItem.qty, dbItem.qty);
-        const weightDiff = (newQty - existingItem.qty) * dbItem.weightInOunces;
+        const qtyDiff = newQty - existingItem.qty;
+        
+        const diffFlower = isFlower ? getFlowerOunces(dbItem) * qtyDiff : 0;
+        const diffConcentrate = isConcentrate ? getConcentrateGrams(dbItem) * qtyDiff : 0;
 
-        // Only merge if it keeps them under the 3.0 oz state limit
-        if (currentWeight + weightDiff <= LEGAL_LIMITS.MAX_OUNCES_PER_ORDER) {
+        if (currentFlowerWeight + diffFlower <= limitFlower && currentConcentrateWeight + diffConcentrate <= limitConcentrate) {
           existingItem.qty = newQty;
-          currentWeight += weightDiff;
+          currentFlowerWeight += diffFlower;
+          currentConcentrateWeight += diffConcentrate;
         }
       } else {
-        // It's a new item from their database history, add it if legal
-        const itemWeight = dbItem.weightInOunces * dbItem.qty;
-        if (currentWeight + itemWeight <= LEGAL_LIMITS.MAX_OUNCES_PER_ORDER) {
+        const itemFlower = isFlower ? getFlowerOunces(dbItem) * dbItem.qty : 0;
+        const itemConcentrate = isConcentrate ? getConcentrateGrams(dbItem) * dbItem.qty : 0;
+
+        if (currentFlowerWeight + itemFlower <= limitFlower && currentConcentrateWeight + itemConcentrate <= limitConcentrate) {
           mergedCart.push(dbItem);
-          currentWeight += itemWeight;
+          currentFlowerWeight += itemFlower;
+          currentConcentrateWeight += itemConcentrate;
         }
       }
     });
 
-    // Save the newly merged cart to Zustand and LocalStorage
     set({ cartItems: mergedCart });
     localStorage.setItem('cartItems', JSON.stringify(mergedCart));
 

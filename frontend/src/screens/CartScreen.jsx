@@ -1,21 +1,34 @@
 import { Link, useNavigate } from 'react-router-dom';
-import axios from '../axios'; // NEW: Brought in axios for the DB sync
+import axios from '../axios'; 
 import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore'; 
 
+const FLOWER_CATEGORIES = ['Flower', 'Pre-Roll'];
+const CONCENTRATE_CATEGORIES = ['Concentrate', 'Vape', 'Edible', 'Tincture'];
+
+const getConcentrateGrams = (item) => {
+  if (item.concentrateGrams) return item.concentrateGrams;
+  if (item.weightInOunces > 0) return Number((item.weightInOunces * 28.3495).toFixed(2));
+  if (item.category === 'Edible' || item.category === 'Tincture') return 1.0; 
+  return 0;
+};
+
 // HELPER: Converts decimal database weights to dispensary standard fractions
-const getFractionalWeight = (decimalOz) => {
+const getFractionalDisplay = (item) => {
+  if (CONCENTRATE_CATEGORIES.includes(item.category)) {
+    const grams = getConcentrateGrams(item);
+    if (Math.abs(grams - 1.0) < 0.05) return '1g eq.';
+    if (Math.abs(grams - 0.5) < 0.05) return '0.5g eq.';
+    if (Math.abs(grams - 1.75) < 0.05) return '1.75g eq.';
+    return `${grams}g eq.`;
+  }
+
+  const decimalOz = item.weightInOunces;
   if (!decimalOz || decimalOz === 0) return '';
-  
   if (Math.abs(decimalOz - 0.125) < 0.001) return '1/8 oz';
   if (Math.abs(decimalOz - 0.25) < 0.001) return '1/4 oz';
   if (Math.abs(decimalOz - 0.5) < 0.001) return '1/2 oz';
   if (Math.abs(decimalOz - 1.0) < 0.001) return '1 oz';
-  
-  if (Math.abs(decimalOz - 0.035) < 0.001) return '1g';
-  if (Math.abs(decimalOz - 0.017) < 0.001) return '0.5g';
-  if (Math.abs(decimalOz - 0.061) < 0.001) return '1.75g'; 
-  
   return `${decimalOz.toFixed(3)} oz`;
 };
 
@@ -23,16 +36,23 @@ const CartScreen = () => {
   const navigate = useNavigate();
   
   const userInfo = useAuthStore((state) => state.userInfo);
-  
   const cartItems = useCartStore((state) => state.cartItems);
   const removeFromCart = useCartStore((state) => state.removeFromCart);
   const addToCart = useCartStore((state) => state.addToCart);
 
   const totalItems = cartItems.reduce((acc, item) => acc + item.qty, 0);
   const totalPrice = cartItems.reduce((acc, item) => acc + item.qty * item.price, 0);
-  const totalWeight = cartItems.reduce((acc, item) => acc + item.qty * item.weightInOunces, 0);
+  
+  const totalFlowerWeight = cartItems.reduce((acc, item) => 
+    FLOWER_CATEGORIES.includes(item.category) ? acc + (item.weightInOunces * item.qty) : acc, 0
+  );
 
-  // --- NEW: DATABASE SYNC LOGIC ---
+  const totalConcentrateWeight = cartItems.reduce((acc, item) => 
+    CONCENTRATE_CATEGORIES.includes(item.category) ? acc + (getConcentrateGrams(item) * item.qty) : acc, 0
+  );
+
+  const isOverLimit = totalFlowerWeight > 3.0 || totalConcentrateWeight > 24.0;
+
   const syncCartToDb = async () => {
     if (userInfo) {
       try {
@@ -45,25 +65,21 @@ const CartScreen = () => {
   };
 
   const updateQtyHandler = async (item, qtyDelta) => {
-    // 1. Update local Zustand state
     const isSuccess = addToCart(item, qtyDelta);
-    // 2. If it was legally added (didn't exceed 3oz limit), sync to DB
     if (isSuccess) {
       await syncCartToDb();
     }
   };
 
   const removeItemHandler = async (id) => {
-    // 1. Remove from local Zustand state
     removeFromCart(id);
-    // 2. Sync the new array to the DB
     await syncCartToDb();
   };
 
   const checkoutHandler = () => {
     cartItems.forEach((item) => {
       if (item.qty === 0) {
-        removeItemHandler(item._id); // Updated to use the new sync handler
+        removeItemHandler(item._id); 
       }
     });
 
@@ -90,24 +106,19 @@ const CartScreen = () => {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px', marginTop: '20px' }}>
           
-          {/* LEFT COLUMN: The Items */}
           <div>
             {cartItems.map((item) => (
               <div key={item._id} style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid #eee', padding: '15px 0', width: '100%' }}>
                 
-                {/* 1. Name & Fractional Weight */}
                 <div style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', paddingRight: '10px', minWidth: '80px' }}>
                   <Link to={`/product/${item._id}`} style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 'bold', fontSize: 'clamp(0.85rem, 2.5vw, 1.1rem)', lineHeight: '1.2' }}>
                     {item.name}
                   </Link>
-                  {item.weightInOunces > 0 && (
-                    <span style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px', fontWeight: 'bold' }}>
-                      {getFractionalWeight(item.weightInOunces)}
-                    </span>
-                  )}
+                  <span style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px', fontWeight: 'bold' }}>
+                    {getFractionalDisplay(item)}
+                  </span>
                 </div>
                 
-                {/* 2. Quantity Controls & Unit Price */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(4px, 1vw, 8px)' }}>
                     <button 
@@ -117,11 +128,9 @@ const CartScreen = () => {
                     >
                       -
                     </button>
-                    
                     <span style={{ fontWeight: 'bold', fontSize: '1rem', width: '15px', textAlign: 'center', color: item.qty === 0 ? '#999' : '#111' }}>
                       {item.qty}
                     </span>
-                    
                     <button 
                       onClick={() => updateQtyHandler(item, 1)}
                       disabled={item.qty >= item.stockQuantity}
@@ -130,16 +139,13 @@ const CartScreen = () => {
                       +
                     </button>
                   </div>
-                  
                   <span style={{ fontSize: 'clamp(0.7rem, 2vw, 0.8rem)', color: '#666', fontWeight: 'bold' }}>
                     ${(item.price / 100).toFixed(2)} / ea
                   </span>
                 </div>
                 
-                {/* 3. The Dynamic Spacer */}
                 <div style={{ flexGrow: 1, minWidth: '10px' }}></div>
                 
-                {/* 4. Total Price & Remove Button */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(6px, 2vw, 15px)', whiteSpace: 'nowrap' }}>
                   <span style={{ fontWeight: 'bold', fontSize: 'clamp(0.85rem, 2.5vw, 1rem)', color: item.qty === 0 ? '#999' : '#111' }}>
                     Total: ${((item.price * item.qty) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -158,21 +164,52 @@ const CartScreen = () => {
             ))}
           </div>
 
-          {/* RIGHT COLUMN: The Checkout Summary */}
           <div style={{ position: 'sticky', top: '20px' }}>
             <div style={{ border: '1px solid #ccc', padding: '25px', borderRadius: '8px', background: '#f9f9f9' }}>
               <h2 style={{ marginTop: 0, borderBottom: '2px solid #ddd', paddingBottom: '10px', marginBottom: '20px' }}>Order Summary</h2>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                <span><strong>Items:</strong></span> 
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px' }}>
+                <span><strong>Total Items:</strong></span> 
                 <span>{totalItems}</span>
               </div>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                <span><strong>Total Weight:</strong></span> 
-                <span style={{ color: totalWeight > 3.0 ? '#cf1322' : '#389e0d', fontWeight: 'bold' }}>
-                  {totalWeight.toFixed(3)} oz
-                </span>
+              {/* THE FIX: Visual Compliance Progress Bars */}
+              <div style={{ marginBottom: '20px', padding: '15px', background: 'white', borderRadius: '8px', border: '1px solid #ddd' }}>
+                <h4 style={{ margin: '0 0 15px 0', fontSize: '0.95rem', color: '#111' }}>Legal Purchase Limits</h4>
+                
+                <div style={{ marginBottom: '15px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px' }}>
+                    <span>Flower & Pre-Rolls</span>
+                    <span style={{ color: totalFlowerWeight > 3.0 ? '#cf1322' : '#666', fontWeight: 'bold' }}>
+                      {totalFlowerWeight.toFixed(2)} / 3.0 oz
+                    </span>
+                  </div>
+                  <div style={{ height: '8px', background: '#eaeaea', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ 
+                      height: '100%', 
+                      background: totalFlowerWeight > 3.0 ? '#cf1322' : '#52c41a', 
+                      width: `${Math.min((totalFlowerWeight / 3.0) * 100, 100)}%`,
+                      transition: 'width 0.3s'
+                    }}></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px' }}>
+                    <span>Vapes & Edibles</span>
+                    <span style={{ color: totalConcentrateWeight > 24.0 ? '#cf1322' : '#666', fontWeight: 'bold' }}>
+                      {totalConcentrateWeight.toFixed(1)} / 24.0 g
+                    </span>
+                  </div>
+                  <div style={{ height: '8px', background: '#eaeaea', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ 
+                      height: '100%', 
+                      background: totalConcentrateWeight > 24.0 ? '#cf1322' : '#1890ff', 
+                      width: `${Math.min((totalConcentrateWeight / 24.0) * 100, 100)}%`,
+                      transition: 'width 0.3s'
+                    }}></div>
+                  </div>
+                </div>
               </div>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #ddd', paddingTop: '15px', marginTop: '15px', fontSize: '1.2rem', fontWeight: 'bold' }}>
@@ -182,12 +219,12 @@ const CartScreen = () => {
               
               <button 
                 onClick={checkoutHandler}
-                disabled={totalItems === 0 || totalWeight > 3.0} 
+                disabled={totalItems === 0 || isOverLimit} 
                 style={{ 
                   width: '100%', padding: '15px', marginTop: '20px', 
-                  background: (totalItems === 0 || totalWeight > 3.0) ? '#ccc' : 'black', 
+                  background: (totalItems === 0 || isOverLimit) ? '#ccc' : 'black', 
                   color: 'white', border: 'none', borderRadius: '5px', 
-                  cursor: (totalItems === 0 || totalWeight > 3.0) ? 'not-allowed' : 'pointer', 
+                  cursor: (totalItems === 0 || isOverLimit) ? 'not-allowed' : 'pointer', 
                   fontSize: '1.1rem', fontWeight: 'bold', transition: 'background 0.3s' 
                 }}
               >
