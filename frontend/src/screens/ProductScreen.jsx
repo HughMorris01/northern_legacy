@@ -5,7 +5,7 @@ import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
 import Loader from '../components/Loader';
 import { toast } from 'react-toastify';
-import '../styles/ProductScreen.css'; // Path assumes you moved the CSS to a styles folder
+import '../styles/ProductScreen.css'; 
 
 const ProductScreen = () => {
   const { id } = useParams();

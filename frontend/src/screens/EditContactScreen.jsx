@@ -15,10 +15,8 @@ const EditContactScreen = () => {
   const [preferredLastName, setPreferredLastName] = useState('');
   const [syncName, setSyncName] = useState(false);
 
-  // Read-only login email
   const [loginEmail, setLoginEmail] = useState('');
 
-  // Marketing & Contact State
   const [emailOptIn, setEmailOptIn] = useState(false);
   const [contactEmail, setContactEmail] = useState('');
   const [syncEmail, setSyncEmail] = useState(false);
@@ -52,7 +50,7 @@ const EditContactScreen = () => {
         setPreferredLastName(data.preferredLastName || '');
         setSyncName(data.syncName || false);
 
-        setLoginEmail(data.email || ''); // Stored strictly for the sync copy
+        setLoginEmail(data.email || '');
         
         setEmailOptIn(data.emailOptIn || false);
         setContactEmail(data.contactEmail || '');
@@ -93,7 +91,6 @@ const EditContactScreen = () => {
         preferredLastName,
         syncName: isVerified ? syncName : false,
         
-        // New explicit payloads
         emailOptIn,
         contactEmail: syncEmail ? loginEmail : contactEmail,
         syncEmail: emailOptIn ? syncEmail : false,
@@ -159,14 +156,12 @@ const EditContactScreen = () => {
           <div style={{ borderTop: '1px solid #eee', paddingTop: '20px' }}>
             <h3 style={{ margin: '0 0 15px 0', fontSize: '1.2rem', color: '#111' }}>Digital Marketing</h3>
             
-            {/* EMAIL CONSENT BLOCK */}
             <div style={{ marginBottom: '25px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
                 <input type="checkbox" id="emailOptIn" checked={emailOptIn} onChange={(e) => setEmailOptIn(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
                 <label htmlFor="emailOptIn" style={{ fontWeight: 'bold', fontSize: '1.05rem', cursor: 'pointer' }}>I consent to receive marketing emails.</label>
               </div>
 
-              {/* Grayed out until emailOptIn is true */}
               <div style={{ marginLeft: '30px', padding: '15px', borderLeft: '3px solid #1890ff', background: '#fafafa', opacity: emailOptIn ? 1 : 0.4, pointerEvents: emailOptIn ? 'auto' : 'none', transition: 'all 0.3s' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
                   <input type="checkbox" id="syncEmailCheck" checked={syncEmail} onChange={(e) => setSyncEmail(e.target.checked)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
@@ -185,14 +180,12 @@ const EditContactScreen = () => {
               </div>
             </div>
 
-            {/* SMS CONSENT BLOCK */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
                 <input type="checkbox" id="smsOptIn" checked={smsOptIn} onChange={(e) => setSmsOptIn(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
                 <label htmlFor="smsOptIn" style={{ fontWeight: 'bold', fontSize: '1.05rem', cursor: 'pointer' }}>I consent to receive SMS marketing messages.</label>
               </div>
 
-              {/* Grayed out until smsOptIn is true */}
               <div style={{ marginLeft: '30px', padding: '15px', borderLeft: '3px solid #52c41a', background: '#fafafa', opacity: smsOptIn ? 1 : 0.4, pointerEvents: smsOptIn ? 'auto' : 'none', transition: 'all 0.3s' }}>
                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', color: '#333' }}>Mobile Phone Number</label>
                 <input 
@@ -212,17 +205,41 @@ const EditContactScreen = () => {
             <h3 style={{ margin: '0 0 15px 0', fontSize: '1.2rem', color: '#111' }}>Physical Mail Marketing</h3>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
-              <input type="checkbox" id="mailOptIn" checked={mailOptIn} onChange={(e) => setMailOptIn(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+              <input 
+                type="checkbox" 
+                id="mailOptIn" 
+                checked={mailOptIn} 
+                onChange={(e) => {
+                  const isChecked = e.target.checked;
+                  setMailOptIn(isChecked);
+                  // THE FIX: Unchecking the consent clears everything back to a clean slate
+                  if (!isChecked) {
+                    setSyncAddresses(false);
+                    setStreet('');
+                    setCity('');
+                    setPostalCode('');
+                  }
+                }} 
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }} 
+              />
               <label htmlFor="mailOptIn" style={{ fontWeight: 'bold', fontSize: '1.05rem', cursor: 'pointer' }}>I consent to receive physical mail and catalogs.</label>
             </div>
 
-            {/* Grayed out until mailOptIn is true */}
             <div style={{ marginLeft: '30px', padding: '15px', borderLeft: '3px solid #722ed1', background: '#fafafa', opacity: mailOptIn ? 1 : 0.4, pointerEvents: mailOptIn ? 'auto' : 'none', transition: 'all 0.3s' }}>
               
               <div style={{ padding: '12px', background: isWater ? '#f5f5f5' : '#f9f0ff', border: `1px solid ${isWater ? '#ddd' : '#d3adf7'}`, borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                <input type="checkbox" id="syncCheckContact" checked={syncAddresses} onChange={(e) => setSyncAddresses(e.target.checked)} disabled={isWater} style={{ width: '16px', height: '16px', cursor: isWater ? 'not-allowed' : 'pointer' }} />
+                <input 
+                  type="checkbox" 
+                  id="syncCheckContact" 
+                  checked={syncAddresses} 
+                  onChange={(e) => setSyncAddresses(e.target.checked)} 
+                  disabled={isWater} 
+                  style={{ width: '16px', height: '16px', cursor: isWater ? 'not-allowed' : 'pointer' }} 
+                />
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <label htmlFor="syncCheckContact" style={{ color: isWater ? '#999' : '#531dab', fontWeight: 'bold', cursor: isWater ? 'not-allowed' : 'pointer' }}>Sync with Default Delivery Address</label>
+                  <label htmlFor="syncCheckContact" style={{ color: isWater ? '#999' : '#531dab', fontWeight: 'bold', cursor: isWater ? 'not-allowed' : 'pointer' }}>
+                    Sync with Default Delivery Address
+                  </label>
                 </div>
               </div>
 
