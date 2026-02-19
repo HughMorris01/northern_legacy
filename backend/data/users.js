@@ -20,9 +20,9 @@ const users = [
     idDocumentHash: 'GREG-HASH-001'
   },
   {
-    firstName: 'Mike',
-    lastName: 'Customer',
-    email: 'mike@aol.com',
+    firstName: 'Jason',
+    lastName: 'Stowell',
+    email: 'jay@aol.com',
     passwordHash: bcrypt.hashSync('123', 10),
     role: 'customer',
     isVerified: true,
@@ -38,9 +38,9 @@ const users = [
     idDocumentHash: 'TOM-HASH-001'
   },
   {
-    firstName: 'Lee',
-    lastName: 'Customer',
-    email: 'lee@aol.com',
+    firstName: 'Meg',
+    lastName: 'Converse',
+    email: 'meg@aol.com',
     passwordHash: bcrypt.hashSync('123', 10),
     role: 'customer',
     isVerified: true,

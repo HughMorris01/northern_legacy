@@ -29,7 +29,7 @@ const VerificationScreen = () => {
       <p style={{ color: '#666', marginBottom: '30px', fontSize: '1.1rem' }}>
         To comply with state regulations, you must verify your age using a valid government-issued ID.
       </p>
-      <p>You dont have to actually provide an id here right now, just aim at your hand or something for a minute and then wait for the button to pop up to snap a photo. There is a little slider that gets in the way of the button, this is a plug-in in sandbox mode right now and I cant move that</p>
+      <p>You dont have to actually provide an id here right now, just aim at your hand or something for a few seconds then tap the screen and a button should pop up to snap a photo. There is a little slider that gets in the way of the button, this is a plug-in in sandbox mode right now and I cant move that. After that you do gotta take 3 phots of your face</p>
 
       {status === 'pending' && (
         <div style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '20px', background: '#f9f9f9', minHeight: '800px', display: 'flex', justifyContent: 'center' }}>

@@ -67,7 +67,7 @@ const products = [
     image: '/assets/flower/dosidos_4.jpg',
     description: 'In-house pheno hunt winner. Frosty, purple hues with a classic cookie dough and gas profile.',
     price: 4500,
-    stockQuantity: 0, // OUT OF STOCK
+    stockQuantity: 1, // OUT OF STOCK
     weightInOunces: 0.125,
     isLimitedRelease: false,
     metrcPackageUid: '1A40E010000000000000005',
@@ -142,7 +142,7 @@ const products = [
     image: '/assets/flower/polynesian_thin_mints.jpg',
     description: 'Tropical fruit meets cool mint. A fantastic daytime hybrid that keeps you focused and relaxed.',
     price: 4500,
-    stockQuantity: 0, // OUT OF STOCK
+    stockQuantity: 6, 
     weightInOunces: 0.125,
     isLimitedRelease: false,
     metrcPackageUid: '1A40E010000000000000011',
