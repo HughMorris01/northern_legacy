@@ -9,19 +9,19 @@ const VerificationScreen = () => {
   
   const [status, setStatus] = useState('pending'); // pending, success, canceled, error
 
+  const queryParams = new URLSearchParams(window.location.search);
+  const redirect = queryParams.get('redirect') || '/profile';
+
   useEffect(() => {
     // Security: Kick them out if they aren't logged in
     if (!userInfo) {
-      navigate('/login');
+      navigate(`/login?redirect=${redirect}`);
     } 
-    // UX: If they are already verified, redirect them to their profile
-    else if (userInfo.isVerified) {
-      navigate('/profile');
+    // THE FIX: Only bounce them automatically if they load the page already verified
+    else if (userInfo.isVerified && status === 'pending') {
+      navigate(redirect);
     }
-  }, [userInfo, navigate]);
-
-  const queryParams = new URLSearchParams(window.location.search);
-  const redirect = queryParams.get('redirect') || '/profile';
+  }, [userInfo, navigate, redirect, status]);
 
   return (
     <div style={{ maxWidth: '800px', margin: '40px auto', padding: '20px', textAlign: 'center', fontFamily: 'sans-serif' }}>
@@ -29,28 +29,27 @@ const VerificationScreen = () => {
       <p style={{ color: '#666', marginBottom: '30px', fontSize: '1.1rem' }}>
         To comply with state regulations, you must verify your age using a valid government-issued ID.
       </p>
+      <p>You dont have to actually provide an id here right now, just aim at your hand or something for a minute and then wait for the button to pop up to snap a photo. There is a little slider that gets in the way of the button, this is a plug-in in sandbox mode right now and I cant move that</p>
 
       {status === 'pending' && (
         <div style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '20px', background: '#f9f9f9', minHeight: '800px', display: 'flex', justifyContent: 'center' }}>
           
-          {/* THE EMBEDDED PERSONA SDK */}
           <PersonaReact
-            templateId="itmpl_JFujKwyQDksMLZGvVdk2vSn7k984" // Persona Sandbox Dashboard Template ID
-            environment="sandbox" // MUST remain 'sandbox' during development!
-            referenceId={userInfo?._id} // CRITICAL: This ties the physical ID to the MongoDB user
+            templateId="itmpl_JFujKwyQDksMLZGvVdk2vSn7k984" 
+            environment="sandbox" 
+            referenceId={userInfo?._id} 
             onReady={() => console.log('Persona UI loaded')}
             onComplete={({ inquiryId }) => {
               setStatus('success');
               
-              // Force the frontend state to update instantly
               useAuthStore.getState().setCredentials({ 
                 ...userInfo, 
                 isVerified: true,
                 idExpirationDate: 'Sandbox Mode',
-                verificationRefNumber: inquiryId // Injects the ID immediately for the UI
+                verificationRefNumber: inquiryId 
               });
             }}
-            onCancel={() => { // <-- Removed inquiryId and sessionToken entirely
+            onCancel={() => { 
               console.log('User canceled the flow');
               setStatus('canceled');
             }}
@@ -71,7 +70,8 @@ const VerificationScreen = () => {
             Your ID has been scanned securely. Our system is updating your profile.
           </p>
           <button 
-            onClick={() => navigate('/profile')}
+            // THE FIX: Dynamically navigates to the redirect route instead of hardcoding '/profile'
+            onClick={() => navigate(redirect)}
             style={{ padding: '12px 24px', background: 'black', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold' }}
           >
           {redirect === '/profile' ? 'Return to Profile' : 'Continue to Checkout'}

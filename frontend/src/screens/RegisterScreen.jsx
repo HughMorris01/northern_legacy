@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import axios from '../axios'; 
 import useAuthStore from '../store/authStore';
-import useCartStore from '../store/cartStore'; // NEW: Imported Cart Store
+import useCartStore from '../store/cartStore'; 
 import { toast } from 'react-toastify';
 import Loader from '../components/Loader';
 
@@ -23,18 +23,21 @@ const RegisterScreen = () => {
   const setCredentials = useAuthStore((state) => state.setCredentials);
   const userInfo = useAuthStore((state) => state.userInfo);
   
-  // NEW: Bring in the merge function
   const mergeCarts = useCartStore((state) => state.mergeCarts);
 
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   useEffect(() => {
     if (userInfo) {
-      navigate(redirect);
+      // If they are already logged in, respect the redirect flow
+      if (!userInfo.isVerified && redirect !== '/profile') {
+        navigate(`/verify?redirect=${redirect}`);
+      } else {
+        navigate(redirect);
+      }
     }
   }, [navigate, redirect, userInfo]);
 
-  // --- STANDARD EMAIL REGISTRATION ---
   const submitHandler = async (e) => {
     e.preventDefault();
 
@@ -53,8 +56,6 @@ const RegisterScreen = () => {
       });
       setCredentials(data);
       
-      // If a user built an anonymous cart, we'd normally want to save it here, 
-      // but running the sync ensures we map any existing DB data cleanly.
       try {
         const { data: dbCart } = await axios.get('/api/users/cart');
         mergeCarts(dbCart);
@@ -63,14 +64,20 @@ const RegisterScreen = () => {
       }
 
       toast.success('Account created successfully!');
-      navigate(redirect);
+      
+      // THE FIX: Hijack the route if they aren't verified and are trying to checkout
+      if (!data.isVerified && redirect !== '/profile') {
+        navigate(`/verify?redirect=${redirect}`);
+      } else {
+        navigate(redirect);
+      }
+
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error registering user');
       setLoading(false);
     }
   };
 
-  // --- GOOGLE OAUTH REGISTRATION/LOGIN ---
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       setLoading(true);
@@ -79,7 +86,6 @@ const RegisterScreen = () => {
       });
       setCredentials(data);
       
-      // Fetch and restore their saved cart (in case they already existed)
       try {
         const { data: dbCart } = await axios.get('/api/users/cart');
         mergeCarts(dbCart);
@@ -88,7 +94,14 @@ const RegisterScreen = () => {
       }
 
       toast.success('Account linked with Google!');
-      navigate(redirect);
+      
+      // THE FIX: Hijack the route if they aren't verified and are trying to checkout
+      if (!data.isVerified && redirect !== '/profile') {
+        navigate(`/verify?redirect=${redirect}`);
+      } else {
+        navigate(redirect);
+      }
+
     } catch (err) {
       toast.error(err.response?.data?.message || 'Google authentication failed');
       setLoading(false);
