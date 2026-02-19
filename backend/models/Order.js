@@ -12,17 +12,20 @@ const orderSchema = new mongoose.Schema({
   items: [
     {
       name: { type: String, required: true },
+      category: { type: String, required: true }, // NEW: Snapshots the category for compliance 
       quantity: { type: Number, required: true },
       priceAtPurchase: { type: Number, required: true }, 
-      weightInOunces: { type: Number, required: true }, 
+      weightInOunces: { type: Number, default: 0 }, // THE FIX: No longer strictly required
+      concentrateGrams: { type: Number, default: 0 }, // NEW: Concentrate tracker
       metrcPackageUid: { type: String, required: true }, 
       productId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Product' },
     }
   ],
 
-    // Financials & Compliance Auditing
+  // Financials & Compliance Auditing
   totalAmount: { type: Number, required: true },
-  totalWeightInOunces: { type: Number, required: true }, 
+  totalWeightInOunces: { type: Number, default: 0 }, // THE FIX
+  totalConcentrateGrams: { type: Number, default: 0 }, // NEW: Total concentrate weight
 
   // --- COMPLIANCE TIMESTAMPS ---
   orderPlacedAt: { type: Date, default: Date.now },

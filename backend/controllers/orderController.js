@@ -3,7 +3,7 @@ import Product from '../models/Product.js';
 
 const addOrderItems = async (req, res) => {
   const {
-    orderItems, // Sent from frontend cart
+    orderItems, 
     shippingAddress,
     paymentMethod,
     totalAmount,
@@ -16,13 +16,21 @@ const addOrderItems = async (req, res) => {
 
   const validatedItems = [];
   let calculatedTotalWeight = 0;
+  let calculatedTotalConcentrate = 0; 
 
   // 1. SECURE HYDRATION & RACE-CONDITION CHECK
   for (const item of orderItems) {
     const product = await Product.findById(item._id);
     
+    // THE FIX: If the product is missing (deleted or old seed data), 
+    // send back the structured "INVENTORY_SHORTAGE" payload so the UI can prompt the user to remove it!
     if (!product) {
-      return res.status(404).json({ message: `Product ${item.name} is no longer available.` });
+      return res.status(404).json({ 
+        message: `${item.name} is no longer available in our catalog.`,
+        errorType: 'INVENTORY_SHORTAGE',
+        product: { _id: item._id, name: item.name }, 
+        remainingQty: 0
+      });
     }
 
     if (product.stockQuantity < item.qty) {
@@ -34,23 +42,23 @@ const addOrderItems = async (req, res) => {
       });
     }
 
-    // Instead of trusting the frontend payload, we build the item strictly from the DB
     validatedItems.push({
       name: product.name,
-      quantity: item.qty, // The only variable we trust from the frontend
+      category: product.category, 
+      quantity: item.qty, 
       priceAtPurchase: product.price, 
-      weightInOunces: product.weightInOunces, // Securely grabbed from DB
-      metrcPackageUid: product.metrcPackageUid, // Securely grabbed from DB
+      weightInOunces: product.weightInOunces || 0, 
+      concentrateGrams: product.concentrateGrams || 0, 
+      metrcPackageUid: product.metrcPackageUid, 
       productId: product._id,
     });
 
-    // Tally the total order weight for the state compliance field
-    calculatedTotalWeight += (product.weightInOunces * item.qty);
+    calculatedTotalWeight += ((product.weightInOunces || 0) * item.qty);
+    calculatedTotalConcentrate += ((product.concentrateGrams || 0) * item.qty);
   }
 
   // 2. DETERMINE ORDER TYPE & STATUS
   let orderType = 'Land Delivery';
-  // We check the address instead of just the payment method so pre-paid pickups work too
   if (shippingAddress.address === 'In-Store Pickup' || paymentMethod === 'Pay In-Store') {
     orderType = 'In-Store Pickup';
   } else if (shippingAddress.terrainType === 'Water') {
@@ -61,7 +69,6 @@ const addOrderItems = async (req, res) => {
   if (orderType === 'In-Store Pickup') {
     initialStatus = paymentMethod === 'Pay In-Store' ? 'Unpaid-Pending Pickup' : 'Paid-Pending Pickup';
   } else {
-    // Deliveries are always paid online via Aeropay
     initialStatus = 'Paid-Pending Delivery'; 
   }
 
@@ -80,10 +87,11 @@ const addOrderItems = async (req, res) => {
     paymentMethod,
     totalAmount,
     totalWeightInOunces: calculatedTotalWeight, 
+    totalConcentrateGrams: calculatedTotalConcentrate, 
     handoffToken,
     status: initialStatus,
-    orderPlacedAt: now,                     // Explicitly stamp placed time
-    orderPaidAt: isPrepaid ? now : undefined, // Stamp paid time if Aeropay used
+    orderPlacedAt: now,                     
+    orderPaidAt: isPrepaid ? now : undefined, 
   });
 
   const createdOrder = await order.save();
@@ -98,9 +106,6 @@ const addOrderItems = async (req, res) => {
   res.status(201).json(createdOrder);
 };
 
-// @desc    Get order by ID
-// @route   GET /api/orders/:id
-// @access  Private
 const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate(
@@ -123,9 +128,6 @@ const getOrderById = async (req, res) => {
   }
 };
 
-// @desc    Get logged in user orders
-// @route   GET /api/orders/myorders
-// @access  Private
 const getMyOrders = async (req, res) => {
   try {
     const orders = await Order.find({ customerId: req.user._id });

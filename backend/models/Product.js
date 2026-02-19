@@ -25,12 +25,12 @@ const productSchema = new mongoose.Schema({
     required: true
   },
   price: {
-    type: Number, // Best Practice: Store in cents to avoid floating point math errors
+    type: Number, 
     required: true,
     min: 0
   },
   image: {
-    type: String, // URL to cloud storage (e.g., AWS S3 or Cloudinary)
+    type: String, 
     required: true
   },
   stockQuantity: {
@@ -45,13 +45,8 @@ const productSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
-  retailItemId: { // Required by NY OCM for unit tracking
-    type: String,
-    sparse: true,
-    unique: true
-  },
   thcContent: {
-    type: Number, // Percentage or mg
+    type: Number, 
   },
   testingStatus: {
     type: String,
@@ -61,11 +56,15 @@ const productSchema = new mongoose.Schema({
   // --- LOGISTICS & DELIVERY FIELDS ---
   weightInOunces: {
     type: Number,
-    required: true 
+    default: 0 
+  },
+  concentrateGrams: {
+    type: Number,
+    default: 0 
   }
 }, {
   timestamps: true
 });
 
-const Product = mongoose.model('Product', productSchema);
+const Product = mongoose.models.Product || mongoose.model('Product', productSchema);
 module.exports = Product;
