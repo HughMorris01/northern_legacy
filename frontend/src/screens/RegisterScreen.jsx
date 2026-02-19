@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import axios from '../axios'; 
 import useAuthStore from '../store/authStore';
+import useCartStore from '../store/cartStore'; // NEW: Imported Cart Store
 import { toast } from 'react-toastify';
 import Loader from '../components/Loader';
 
@@ -21,8 +22,10 @@ const RegisterScreen = () => {
 
   const setCredentials = useAuthStore((state) => state.setCredentials);
   const userInfo = useAuthStore((state) => state.userInfo);
+  
+  // NEW: Bring in the merge function
+  const mergeCarts = useCartStore((state) => state.mergeCarts);
 
-  // Pull the Client ID from your frontend .env file
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   useEffect(() => {
@@ -48,8 +51,17 @@ const RegisterScreen = () => {
         email, 
         password 
       });
-      
       setCredentials(data);
+      
+      // If a user built an anonymous cart, we'd normally want to save it here, 
+      // but running the sync ensures we map any existing DB data cleanly.
+      try {
+        const { data: dbCart } = await axios.get('/api/users/cart');
+        mergeCarts(dbCart);
+      } catch (cartErr) {
+        console.error('Failed to sync cart on register', cartErr);
+      }
+
       toast.success('Account created successfully!');
       navigate(redirect);
     } catch (err) {
@@ -65,8 +77,16 @@ const RegisterScreen = () => {
       const { data } = await axios.post('/api/users/google', {
         credential: credentialResponse.credential,
       });
-      
       setCredentials(data);
+      
+      // Fetch and restore their saved cart (in case they already existed)
+      try {
+        const { data: dbCart } = await axios.get('/api/users/cart');
+        mergeCarts(dbCart);
+      } catch (cartErr) {
+        console.error('Failed to sync cart on google register', cartErr);
+      }
+
       toast.success('Account linked with Google!');
       navigate(redirect);
     } catch (err) {
@@ -82,7 +102,6 @@ const RegisterScreen = () => {
         <h1 style={{ textAlign: 'center', margin: '0 0 10px 0', fontSize: '2rem' }}>Create an Account</h1>
         <p style={{ textAlign: 'center', color: '#666', marginBottom: '30px' }}>Join Northern Legacy for seamless ordering and delivery.</p>
 
-        {/* GOOGLE BUTTON BLOCK */}
         {clientId ? (
           <GoogleOAuthProvider clientId={clientId}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
@@ -109,7 +128,6 @@ const RegisterScreen = () => {
           <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #eee' }} />
         </div>
 
-        {/* STANDARD FORM */}
         <form onSubmit={submitHandler} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
             <div style={{ flex: '1 1 150px' }}>
