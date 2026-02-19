@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import AutoLogoutHandler from './components/AutoLogoutHandler';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import AgeGateModal from './components/AgeGateModal';
 import Header from './components/Header';
 import HomeScreen from './screens/HomeScreen';
 import MerchScreen from './screens/MerchScreen';
@@ -25,6 +26,7 @@ const App = () => {
   return (
     <Router>
       <AutoLogoutHandler>
+      <AgeGateModal />
         <Header />
         <ToastContainer position="top-center" theme="dark" autoClose={3000} />
         <main>
