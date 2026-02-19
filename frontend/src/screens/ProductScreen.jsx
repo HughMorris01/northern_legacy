@@ -5,7 +5,7 @@ import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
 import Loader from '../components/Loader';
 import { toast } from 'react-toastify';
-import '../styles/ProductScreen.css'; // <-- IMPORT THE NEW CSS
+import '../styles/ProductScreen.css'; // Path assumes you moved the CSS to a styles folder
 
 const ProductScreen = () => {
   const { id } = useParams();
@@ -38,7 +38,6 @@ const ProductScreen = () => {
   const qtyInCart = existItem ? existItem.qty : 0;
   const availableStock = (product.stockQuantity || 0) - qtyInCart;
 
-  // INSTANT DB SYNC HANDLER
   const addToCartHandler = async () => {
     const isSuccess = addToCart(product, Number(qty)); 
     
@@ -72,7 +71,9 @@ const ProductScreen = () => {
   const isDbOutOfStock = product.stockQuantity === 0;
   const isCartMaxedOut = product.stockQuantity > 0 && availableStock === 0;
   const isVisualGrayOut = isDbOutOfStock || isCartMaxedOut; 
-  const isLowStock = product.stockQuantity > 0 && product.stockQuantity <= 5;
+  
+  // THE FIX: isLowStock now reads from the dynamically calculated availableStock
+  const isLowStock = availableStock > 0 && availableStock <= 5;
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: 'clamp(5px, 2vw, 20px)', fontFamily: 'sans-serif' }}>
@@ -92,15 +93,17 @@ const ProductScreen = () => {
         &larr; Back to Menu
       </Link>
       
-      {/* NEW CSS CLASS HERE */}
       <div className="product-card">
         
-        {/* LEFT COLUMN: Image Container */}
         <div className="image-container">
           {product.isLimitedRelease && <span className="badge badge-limited">🔥 Limited</span>}
           {isDbOutOfStock && <span className="badge badge-out">Out of Stock</span>}
           {isCartMaxedOut && <span className="badge badge-maxed">Cart Maxed</span>}
-          {isLowStock && !isDbOutOfStock && !isCartMaxedOut && <span className="badge badge-low">Almost Gone!</span>}
+          
+          {/* THE FIX: Inject availableStock into the text string! */}
+          {isLowStock && !isDbOutOfStock && !isCartMaxedOut && (
+            <span className="badge badge-low">Almost Gone! ({availableStock} left)</span>
+          )}
 
           <img 
             src={product.image || '/assets/placeholder.jpg'} 
@@ -109,7 +112,6 @@ const ProductScreen = () => {
           />
         </div>
 
-        {/* RIGHT COLUMN: Details Container */}
         <div className="details-container">
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
@@ -146,7 +148,6 @@ const ProductScreen = () => {
             </div>
           </div>
           
-          {/* CART ENGINE */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {isDbOutOfStock ? (
               <div style={{ padding: '10px', background: '#f5f5f5', border: '2px dashed #ccc', borderRadius: '8px', textAlign: 'center' }}>

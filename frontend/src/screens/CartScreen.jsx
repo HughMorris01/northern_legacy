@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
+import axios from '../axios'; // NEW: Brought in axios for the DB sync
 import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore'; 
 
@@ -6,18 +7,15 @@ import useAuthStore from '../store/authStore';
 const getFractionalWeight = (decimalOz) => {
   if (!decimalOz || decimalOz === 0) return '';
   
-  // Flower Weights
   if (Math.abs(decimalOz - 0.125) < 0.001) return '1/8 oz';
   if (Math.abs(decimalOz - 0.25) < 0.001) return '1/4 oz';
   if (Math.abs(decimalOz - 0.5) < 0.001) return '1/2 oz';
   if (Math.abs(decimalOz - 1.0) < 0.001) return '1 oz';
   
-  // Concentrate/Vape/Pre-roll Weights (from PRD)
   if (Math.abs(decimalOz - 0.035) < 0.001) return '1g';
   if (Math.abs(decimalOz - 0.017) < 0.001) return '0.5g';
   if (Math.abs(decimalOz - 0.061) < 0.001) return '1.75g'; 
   
-  // Fallback
   return `${decimalOz.toFixed(3)} oz`;
 };
 
@@ -34,11 +32,38 @@ const CartScreen = () => {
   const totalPrice = cartItems.reduce((acc, item) => acc + item.qty * item.price, 0);
   const totalWeight = cartItems.reduce((acc, item) => acc + item.qty * item.weightInOunces, 0);
 
+  // --- NEW: DATABASE SYNC LOGIC ---
+  const syncCartToDb = async () => {
+    if (userInfo) {
+      try {
+        const updatedCart = useCartStore.getState().cartItems;
+        await axios.put('/api/users/cart', { cartItems: updatedCart });
+      } catch (err) {
+        console.error('Failed to sync cart to database', err);
+      }
+    }
+  };
+
+  const updateQtyHandler = async (item, qtyDelta) => {
+    // 1. Update local Zustand state
+    const isSuccess = addToCart(item, qtyDelta);
+    // 2. If it was legally added (didn't exceed 3oz limit), sync to DB
+    if (isSuccess) {
+      await syncCartToDb();
+    }
+  };
+
+  const removeItemHandler = async (id) => {
+    // 1. Remove from local Zustand state
+    removeFromCart(id);
+    // 2. Sync the new array to the DB
+    await syncCartToDb();
+  };
+
   const checkoutHandler = () => {
-    // SECURITY SWEEP
     cartItems.forEach((item) => {
       if (item.qty === 0) {
-        removeFromCart(item._id);
+        removeItemHandler(item._id); // Updated to use the new sync handler
       }
     });
 
@@ -82,11 +107,11 @@ const CartScreen = () => {
                   )}
                 </div>
                 
-                {/* 2. THE FIX: Quantity Controls & Unit Price (Stacked Vertically) */}
+                {/* 2. Quantity Controls & Unit Price */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(4px, 1vw, 8px)' }}>
                     <button 
-                      onClick={() => addToCart(item, -1)}
+                      onClick={() => updateQtyHandler(item, -1)}
                       disabled={item.qty <= 0}
                       style={{ padding: '4px 10px', cursor: item.qty <= 0 ? 'not-allowed' : 'pointer', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '4px', fontSize: '1.1rem', fontWeight: 'bold' }}
                     >
@@ -98,7 +123,7 @@ const CartScreen = () => {
                     </span>
                     
                     <button 
-                      onClick={() => addToCart(item, 1)}
+                      onClick={() => updateQtyHandler(item, 1)}
                       disabled={item.qty >= item.stockQuantity}
                       style={{ padding: '4px 10px', cursor: item.qty >= item.stockQuantity ? 'not-allowed' : 'pointer', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '4px', fontSize: '1.1rem', fontWeight: 'bold' }}
                     >
@@ -106,7 +131,6 @@ const CartScreen = () => {
                     </button>
                   </div>
                   
-                  {/* Unit price tucked right underneath */}
                   <span style={{ fontSize: 'clamp(0.7rem, 2vw, 0.8rem)', color: '#666', fontWeight: 'bold' }}>
                     ${(item.price / 100).toFixed(2)} / ea
                   </span>
@@ -121,7 +145,7 @@ const CartScreen = () => {
                     Total: ${((item.price * item.qty) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                   <button 
-                    onClick={() => removeFromCart(item._id)}
+                    onClick={() => removeItemHandler(item._id)}
                     style={{ padding: '6px 10px', background: '#fff2f0', color: '#cf1322', border: '1px solid #ffa39e', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold', transition: 'all 0.2s' }}
                     onMouseOver={(e) => e.currentTarget.style.background = '#ffccc7'}
                     onMouseOut={(e) => e.currentTarget.style.background = '#fff2f0'}
