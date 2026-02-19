@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import axios from '../axios';
 import useAuthStore from '../store/authStore';
+import useCartStore from '../store/cartStore'; // NEW: Imported Cart Store
 import { toast } from 'react-toastify';
 import Loader from '../components/Loader';
 
@@ -14,12 +15,14 @@ const LoginScreen = () => {
   const navigate = useNavigate();
   const { search } = useLocation();
   const sp = new URLSearchParams(search);
-  const redirect = sp.get('redirect') || '/profile'; // Defaults to dashboard on login
+  const redirect = sp.get('redirect') || '/profile'; 
 
   const userInfo = useAuthStore((state) => state.userInfo);
   const setCredentials = useAuthStore((state) => state.setCredentials);
+  
+  // NEW: Bring in the merge function
+  const mergeCarts = useCartStore((state) => state.mergeCarts); 
 
-  // If already logged in, push them away from the login screen
   useEffect(() => {
     if (userInfo) {
       navigate(redirect);
@@ -31,8 +34,18 @@ const LoginScreen = () => {
     e.preventDefault();
     try {
       setLoading(true);
+      // 1. Log the user in
       const { data } = await axios.post('/api/users/login', { email, password });
       setCredentials(data);
+      
+      // 2. THE FIX: Fetch and restore their saved cart from the database
+      try {
+        const { data: dbCart } = await axios.get('/api/users/cart');
+        mergeCarts(dbCart);
+      } catch (cartErr) {
+        console.error('Failed to sync cart on login', cartErr);
+      }
+
       toast.success('Login successful!');
       navigate(redirect);
     } catch (err) {
@@ -45,12 +58,20 @@ const LoginScreen = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       setLoading(true);
-      // Send the secure Google token to our new backend route
+      // 1. Authenticate with Google
       const { data } = await axios.post('/api/users/google', {
         credential: credentialResponse.credential,
       });
-      
       setCredentials(data);
+      
+      // 2. THE FIX: Fetch and restore their saved cart from the database
+      try {
+        const { data: dbCart } = await axios.get('/api/users/cart');
+        mergeCarts(dbCart);
+      } catch (cartErr) {
+        console.error('Failed to sync cart on login', cartErr);
+      }
+
       toast.success('Successfully authenticated with Google!');
       navigate(redirect);
     } catch (err) {
@@ -59,7 +80,6 @@ const LoginScreen = () => {
     }
   };
 
-  // Pull the Client ID from your frontend .env file
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   return (
@@ -69,7 +89,6 @@ const LoginScreen = () => {
         <h1 style={{ textAlign: 'center', margin: '0 0 10px 0', fontSize: '2rem' }}>Welcome Back</h1>
         <p style={{ textAlign: 'center', color: '#666', marginBottom: '30px' }}>Sign in to access your dashboard and order history.</p>
 
-        {/* GOOGLE BUTTON BLOCK */}
         {clientId ? (
           <GoogleOAuthProvider clientId={clientId}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
@@ -96,7 +115,6 @@ const LoginScreen = () => {
           <hr style={{ flex: 1, border: 'none', borderTop: '1px solid #eee' }} />
         </div>
 
-        {/* STANDARD FORM */}
         <form onSubmit={submitHandler} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
             <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', color: '#333' }}>Email Address</label>
