@@ -1,0 +1,74 @@
+/* frontend/src/screens/ProductScreen.css */
+
+.product-card {
+    display: flex;
+    flex-direction: column; /* Default to mobile stacking */
+    gap: clamp(20px, 4vw, 40px);
+    background: #fff;
+    padding: clamp(15px, 3vw, 30px);
+    border-radius: 12px;
+    border: 1px solid #eaeaea;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* --- MOBILE IMAGE CONTROLS --- */
+.image-container {
+    position: relative;
+    width: 100%;
+    /* THE FIX: Drastically reduced height mapped to the viewport height */
+    height: clamp(160px, 22vh, 220px); 
+}
+
+.product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+/* --- DESKTOP BREAKPOINT (Tablets & up) --- */
+@media (min-width: 768px) {
+    .product-card {
+        flex-direction: row; /* Switch to side-by-side */
+        align-items: center; /* Center items vertically relative to each other */
+        justify-content: space-between;
+    }
+
+    .image-container {
+        flex: 1 1 40%; /* Take up roughly 40% width */
+        height: auto; /* Release the fixed mobile height */
+        /* THE FIX FOR DESKTOP SCREENSHOT: Cap the max height so it doesn't dwarf short text */
+        max-height: 500px; 
+        aspect-ratio: 4 / 3; /* Optional: Provides a nice default shape */
+    }
+
+    .details-container {
+        flex: 1 1 55%; /* Take up the rest */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+}
+
+/* Utility Classes */
+.gray-out {
+    opacity: 0.5;
+    filter: grayscale(100%);
+}
+
+/* Badge Styles */
+.badge {
+    position: absolute;
+    top: 10px;
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    border-radius: 4px;
+    z-index: 10;
+    color: white;
+}
+.badge-limited { left: -5px; background: #e0282e; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+.badge-out { right: -5px; background: #555; }
+.badge-maxed { right: -5px; background: #d48806; }
+.badge-low { right: -5px; background: #ff4d4f; }

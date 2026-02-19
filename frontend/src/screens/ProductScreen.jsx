@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from '../axios';
 import useCartStore from '../store/cartStore';
+import useAuthStore from '../store/authStore';
 import Loader from '../components/Loader';
 import { toast } from 'react-toastify';
+import '../styles/ProductScreen.css'; // <-- IMPORT THE NEW CSS
 
 const ProductScreen = () => {
   const { id } = useParams();
@@ -16,6 +18,7 @@ const ProductScreen = () => {
 
   const addToCart = useCartStore((state) => state.addToCart);
   const cartItems = useCartStore((state) => state.cartItems);
+  const userInfo = useAuthStore((state) => state.userInfo);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -35,13 +38,23 @@ const ProductScreen = () => {
   const qtyInCart = existItem ? existItem.qty : 0;
   const availableStock = (product.stockQuantity || 0) - qtyInCart;
 
-  const addToCartHandler = () => {
+  // INSTANT DB SYNC HANDLER
+  const addToCartHandler = async () => {
     const isSuccess = addToCart(product, Number(qty)); 
     
     if (isSuccess) {
       toast.success(`${qty}x ${product.name} added to cart!`);
       setQty(1); 
       setShowViewCart(true); 
+
+      if (userInfo) {
+        try {
+          const updatedCart = useCartStore.getState().cartItems;
+          await axios.put('/api/users/cart', { cartItems: updatedCart });
+        } catch (err) {
+          console.error('Failed to sync cart to database', err);
+        }
+      }
     }
   };
 
@@ -79,52 +92,25 @@ const ProductScreen = () => {
         &larr; Back to Menu
       </Link>
       
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'clamp(10px, 2vw, 30px)', background: '#fff', padding: 'clamp(15px, 3vw, 20px)', borderRadius: '12px', border: '1px solid #eaeaea', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', alignItems: 'stretch' }}>
+      {/* NEW CSS CLASS HERE */}
+      <div className="product-card">
         
-        {/* LEFT COLUMN: Image */}
-        <div style={{ flex: '1 1 280px', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-          
-          {product.isLimitedRelease && (
-            <span style={{ position: 'absolute', top: '10px', left: '-5px', background: '#e0282e', color: 'white', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 'bold', borderRadius: '4px', zIndex: 10, boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>
-              🔥 Limited
-            </span>
-          )}
-          {isDbOutOfStock && (
-            <span style={{ position: 'absolute', top: '10px', right: '-5px', background: '#555', color: 'white', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 'bold', borderRadius: '4px', zIndex: 10 }}>
-              Out of Stock
-            </span>
-          )}
-          {isCartMaxedOut && (
-            <span style={{ position: 'absolute', top: '10px', right: '-5px', background: '#d48806', color: 'white', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 'bold', borderRadius: '4px', zIndex: 10 }}>
-              Cart Maxed
-            </span>
-          )}
-          {isLowStock && !isDbOutOfStock && !isCartMaxedOut && (
-            <span style={{ position: 'absolute', top: '10px', right: '-5px', background: '#ff4d4f', color: 'white', padding: '4px 8px', fontSize: '0.7rem', fontWeight: 'bold', borderRadius: '4px', zIndex: 10 }}>
-              Almost Gone!
-            </span>
-          )}
+        {/* LEFT COLUMN: Image Container */}
+        <div className="image-container">
+          {product.isLimitedRelease && <span className="badge badge-limited">🔥 Limited</span>}
+          {isDbOutOfStock && <span className="badge badge-out">Out of Stock</span>}
+          {isCartMaxedOut && <span className="badge badge-maxed">Cart Maxed</span>}
+          {isLowStock && !isDbOutOfStock && !isCartMaxedOut && <span className="badge badge-low">Almost Gone!</span>}
 
           <img 
             src={product.image || '/assets/placeholder.jpg'} 
             alt={product.name} 
-            style={{ 
-              width: '100%', 
-              /* THE FIX: Dynamic viewport height scaling. 
-                 It will never be smaller than 180px, it targets 30% of the screen height on mobile, 
-                 and caps out at 350px max on desktop. */
-              height: 'clamp(180px, 30vh, 350px)', 
-              objectFit: 'cover', 
-              borderRadius: '8px', 
-              opacity: isVisualGrayOut ? 0.5 : 1,
-              filter: isVisualGrayOut ? 'grayscale(100%)' : 'none',
-              transition: 'all 0.3s'
-            }} 
+            className={`product-image ${isVisualGrayOut ? 'gray-out' : ''}`}
           />
         </div>
 
-        {/* RIGHT COLUMN: Details */}
-        <div style={{ flex: '2 1 280px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        {/* RIGHT COLUMN: Details Container */}
+        <div className="details-container">
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
             <span style={{ color: '#666', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '1px', fontWeight: 'bold' }}>
@@ -199,7 +185,6 @@ const ProductScreen = () => {
               </div>
             )}
 
-            {/* View Cart Button */}
             {showViewCart && (
               <Link 
                 to="/cart" 
