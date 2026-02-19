@@ -45,12 +45,20 @@ const userSchema = new mongoose.Schema({
     type: String, 
     default: null,
   },
-
-  // --- DIGITAL IDENTITY & CONTACT ---
+// --- DIGITAL IDENTITY & CONTACT ---
   preferredFirstName: { type: String, default: '' },
   preferredLastName: { type: String, default: '' },
   syncName: { type: Boolean, default: false },
   phoneNumber: { type: String, default: '' },
+  contactEmail: { type: String, default: '' }, 
+  syncEmail: { type: Boolean, default: false }, 
+  
+ // --- MARKETING & DATA PRIVACY ---
+  emailOptIn: { type: Boolean, default: false }, // NEW
+  smsOptIn: { type: Boolean, default: false },
+  mailOptIn: { type: Boolean, default: false }, // NEW
+  smsOptInTimestamp: { type: Date },
+  isAnonymized: { type: Boolean, default: false },
 
   // --- ADDRESSES & PREFERENCES ---
   address: { 
@@ -80,11 +88,6 @@ const userSchema = new mongoose.Schema({
     enum: ['customer', 'admin', 'budtender', 'driver'],
     default: 'customer'
   },
-  
-  // --- MARKETING & DATA PRIVACY ---
-  smsOptIn: { type: Boolean, default: false },
-  smsOptInTimestamp: { type: Date },
-  isAnonymized: { type: Boolean, default: false },
   
   // --- SAVED STATE ---
   savedCart: [

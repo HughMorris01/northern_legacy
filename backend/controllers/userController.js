@@ -226,7 +226,12 @@ const getUserProfile = async (req, res) => {
         preferredLastName: user.preferredLastName,
         syncName: user.syncName || false,
         email: user.email,
+        contactEmail: user.contactEmail,
+        syncEmail: user.syncEmail || false,
+        emailOptIn: user.emailOptIn || false,
         phoneNumber: user.phoneNumber,
+        smsOptIn: user.smsOptIn || false,
+        mailOptIn: user.mailOptIn || false,
         dateOfBirth: user.dateOfBirth,
         role: user.role,
         isVerified: user.isVerified,
@@ -253,11 +258,22 @@ const updateUserProfile = async (req, res) => {
     const user = await User.findById(req.user._id);
 
     if (user) {
-      // Basic Contact & Bank Info
-      user.email = req.body.email || user.email;
-      if (req.body.phoneNumber !== undefined) user.phoneNumber = req.body.phoneNumber;
-      if (req.body.linkedBank !== undefined) user.linkedBank = req.body.linkedBank;
+      // --- NEW: Contact & Marketing Opt-Ins ---
+      if (req.body.emailOptIn !== undefined) user.emailOptIn = req.body.emailOptIn;
+      if (req.body.smsOptIn !== undefined) user.smsOptIn = req.body.smsOptIn;
+      if (req.body.mailOptIn !== undefined) user.mailOptIn = req.body.mailOptIn;
       
+      if (req.body.syncEmail !== undefined) user.syncEmail = req.body.syncEmail;
+      if (req.body.contactEmail !== undefined) user.contactEmail = req.body.contactEmail;
+      if (req.body.phoneNumber !== undefined) user.phoneNumber = req.body.phoneNumber;
+      
+      if (req.body.linkedBank !== undefined) user.linkedBank = req.body.linkedBank;
+
+      // THE EMAIL SYNC LOGIC
+      if (user.syncEmail && user.emailOptIn) {
+        user.contactEmail = user.email; // Sets contact email to their unchangeable login email
+      }
+
       // Preferred Name Updates
       if (req.body.preferredFirstName !== undefined) user.preferredFirstName = req.body.preferredFirstName;
       if (req.body.preferredLastName !== undefined) user.preferredLastName = req.body.preferredLastName;
@@ -311,10 +327,16 @@ const updateUserProfile = async (req, res) => {
 
       const updatedUser = await user.save();
 
+      // Ensure all new preferences are sent back to Zustand
       res.json({
         _id: updatedUser._id,
-        email: updatedUser.email,
+        email: updatedUser.email, 
+        contactEmail: updatedUser.contactEmail,
+        syncEmail: updatedUser.syncEmail,
+        emailOptIn: updatedUser.emailOptIn,
         phoneNumber: updatedUser.phoneNumber,
+        smsOptIn: updatedUser.smsOptIn,
+        mailOptIn: updatedUser.mailOptIn,
         preferredFirstName: updatedUser.preferredFirstName,
         preferredLastName: updatedUser.preferredLastName,
         syncName: updatedUser.syncName,

@@ -16,6 +16,12 @@ const ProfileDashboardScreen = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
 
+  // Password Change State
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -56,16 +62,34 @@ const ProfileDashboardScreen = () => {
     }
   };
 
+  const passwordSubmitHandler = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    try {
+      setPasswordLoading(true);
+      await axios.put('/api/users/profile', { password: newPassword });
+      toast.success('Password successfully updated!');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowPasswordForm(false);
+      setPasswordLoading(false);
+    } catch {
+      toast.error('Failed to update password');
+      setPasswordLoading(false);
+    }
+  };
+
   if (loading) return <Loader />;
 
-  // DYNAMIC NAME RESOLUTION
   const displayFirstName = profileData?.preferredFirstName || profileData?.firstName;
   const displayLastName = profileData?.preferredLastName || profileData?.lastName;
 
   return (
     <div style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 15px', fontFamily: 'sans-serif', boxSizing: 'border-box', overflowX: 'hidden' }}>
       
-      {/* UPDATED DYNAMIC DASHBOARD HEADER */}
       <div style={{ borderBottom: '2px solid #111', paddingBottom: '10px', marginBottom: '30px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
         <h1 style={{ margin: 0, fontSize: '2rem' }}>
           {displayFirstName ? `${displayFirstName}'s Dashboard` : 'My Profile'}
@@ -109,30 +133,6 @@ const ProfileDashboardScreen = () => {
             </p>
             <p style={{ margin: 0, fontSize: '1.05rem' }}>
               <strong>ID Expiration Date:</strong> {profileData?.isVerified && profileData?.idExpirationDate ? profileData.idExpirationDate : <span style={{ color: '#999', fontStyle: 'italic' }}>Pending Verification</span>}
-            </p>
-          </div>
-
-          {/* CONTACT INFO FIELDS */}
-          <div style={{ border: '1px solid #eaeaea', padding: '20px', borderRadius: '8px', marginBottom: '25px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ddd', paddingBottom: '10px', marginBottom: '15px' }}>
-              <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#111' }}>Contact Information</h3>
-              <button onClick={() => navigate('/profile/contact')} style={{ padding: '6px 15px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>
-                Edit
-              </button>
-            </div>
-            
-            <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem' }}>
-              <strong>Digital Name:</strong> {displayFirstName} {displayLastName}
-              {profileData?.syncName && <span style={{ fontSize: '0.8rem', color: '#1890ff', marginLeft: '10px', fontWeight: 'bold' }}>(Synced to Legal)</span>}
-            </p>
-            <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem' }}><strong>Email:</strong> {profileData?.email}</p>
-            <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem' }}><strong>Phone:</strong> {profileData?.phoneNumber || <span style={{ color: '#999', fontStyle: 'italic' }}>Not Provided</span>}</p>
-            <p style={{ margin: 0, fontSize: '1.05rem' }}>
-              <strong>Mailing Address: </strong> 
-              {profileData?.mailingAddress?.street 
-                ? `${profileData.mailingAddress.street}, ${profileData.mailingAddress.city} ${profileData.mailingAddress.postalCode}`
-                : <span style={{ color: '#999', fontStyle: 'italic' }}>Not Provided</span>
-              }
             </p>
           </div>
 
@@ -181,6 +181,84 @@ const ProfileDashboardScreen = () => {
                 🔒 <strong>Bank-Level Security:</strong> All financial data is tokenized and vaulted using SOC2-compliant AES-256 encryption. Raw account numbers are never stored on Northern Legacy servers.
               </p>
             </div>
+          </div>
+
+          {/* MARKETING & CONTACT INFO FIELDS */}
+          <div style={{ border: '1px solid #eaeaea', padding: '20px', borderRadius: '8px', marginBottom: '25px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ddd', paddingBottom: '10px', marginBottom: '15px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#111' }}>Marketing & Contact Preferences</h3>
+              <button onClick={() => navigate('/profile/contact')} style={{ padding: '6px 15px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                Edit
+              </button>
+            </div>
+            
+            <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem' }}>
+              <strong>Digital Name:</strong> {displayFirstName} {displayLastName}
+              {profileData?.syncName && <span style={{ fontSize: '0.8rem', color: '#1890ff', marginLeft: '10px', fontWeight: 'bold' }}>(Synced to Legal)</span>}
+            </p>
+            
+            <div style={{ padding: '10px', background: '#fafafa', borderRadius: '6px', marginBottom: '10px', borderLeft: profileData?.emailOptIn ? '4px solid #1890ff' : '4px solid #ccc' }}>
+              <p style={{ margin: '0 0 5px 0', fontSize: '1.05rem' }}>
+                <strong>Contact Email:</strong> {profileData?.emailOptIn && profileData?.contactEmail ? profileData.contactEmail : <span style={{ color: '#999', fontStyle: 'italic' }}>Opted Out</span>}
+              </p>
+            </div>
+
+            <div style={{ padding: '10px', background: '#fafafa', borderRadius: '6px', marginBottom: '10px', borderLeft: profileData?.smsOptIn ? '4px solid #52c41a' : '4px solid #ccc' }}>
+              <p style={{ margin: '0 0 5px 0', fontSize: '1.05rem' }}>
+                <strong>Mobile Phone:</strong> {profileData?.smsOptIn && profileData?.phoneNumber ? profileData.phoneNumber : <span style={{ color: '#999', fontStyle: 'italic' }}>Opted Out</span>}
+              </p>
+            </div>
+
+            <div style={{ padding: '10px', background: '#fafafa', borderRadius: '6px', borderLeft: profileData?.mailOptIn ? '4px solid #722ed1' : '4px solid #ccc' }}>
+              <p style={{ margin: 0, fontSize: '1.05rem' }}>
+                <strong>Mailing Address: </strong> 
+                {profileData?.mailOptIn && profileData?.mailingAddress?.street 
+                  ? `${profileData.mailingAddress.street}, ${profileData.mailingAddress.city} ${profileData.mailingAddress.postalCode}`
+                  : <span style={{ color: '#999', fontStyle: 'italic' }}>Opted Out</span>
+                }
+              </p>
+            </div>
+          </div>
+
+          {/* ACCOUNT & SECURITY SECTION */}
+          <div style={{ border: '1px solid #eaeaea', padding: '20px', borderRadius: '8px', marginBottom: '25px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ddd', paddingBottom: '10px', marginBottom: '15px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#111' }}>Account & Security</h3>
+            </div>
+            
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.9rem', color: '#666', marginBottom: '5px' }}>Secure Login Email (Unchangeable)</label>
+              <input 
+                type="text" 
+                value={profileData?.email || ''} 
+                disabled 
+                style={{ width: '100%', padding: '10px', background: '#f5f5f5', border: '1px solid #ccc', borderRadius: '4px', color: '#666', cursor: 'not-allowed', boxSizing: 'border-box' }} 
+              />
+            </div>
+
+            {!showPasswordForm ? (
+              <button 
+                onClick={() => setShowPasswordForm(true)} 
+                style={{ background: 'none', border: 'none', color: '#1890ff', fontWeight: 'bold', cursor: 'pointer', padding: 0, fontSize: '0.95rem' }}
+              >
+                Change Password...
+              </button>
+            ) : (
+              <form onSubmit={passwordSubmitHandler} style={{ background: '#fafafa', padding: '15px', borderRadius: '8px', border: '1px solid #eee', marginTop: '10px' }}>
+                <div style={{ marginBottom: '10px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>New Password</label>
+                  <input type="password" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }} />
+                </div>
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Confirm New Password</label>
+                  <input type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }} />
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="submit" disabled={passwordLoading} style={{ padding: '8px 15px', background: 'black', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>{passwordLoading ? 'Saving...' : 'Save Password'}</button>
+                  <button type="button" onClick={() => setShowPasswordForm(false)} style={{ padding: '8px 15px', background: '#e8e8e8', color: '#333', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                </div>
+              </form>
+            )}
           </div>
 
         </div>
