@@ -4,6 +4,7 @@ import axios from '../axios';
 import Loader from '../components/Loader';
 import DeliveryChecker from '../components/DeliveryChecker';
 import useCartStore from '../store/cartStore';
+import '../styles/HomeScreen.css'; // <-- NEW CSS IMPORT
 
 const HomeScreen = () => {
   const location = useLocation();
@@ -60,7 +61,6 @@ const HomeScreen = () => {
 
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', borderBottom: '2px solid #eee', paddingBottom: '15px', marginBottom: '20px', flexWrap: 'wrap', gap: '25px' }}>
         <div>
-          {/* THE FIX: Replaced the external <a> tag with an internal <Link> */}
           <Link 
             to="/merch" 
             style={{ 
@@ -125,7 +125,7 @@ const HomeScreen = () => {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '25px', marginTop: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px', marginTop: '10px' }}>
         {filteredProducts.map((product) => {
           const strain = getStrainColor(product.strainType);
           
@@ -139,7 +139,8 @@ const HomeScreen = () => {
           const isLowStock = availableStock > 0 && availableStock <= 5;
 
           return (
-            <div key={product._id} style={{ border: '1px solid #eaeaea', padding: '20px', borderRadius: '12px', position: 'relative', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', opacity: isVisualGrayOut ? 0.6 : 1, transition: 'all 0.3s' }}>
+            /* APPLIED NEW CSS CLASSES HERE */
+            <div key={product._id} className={`product-grid-card ${isVisualGrayOut ? 'gray-out' : ''}`}>
               
               {isDbOutOfStock && (
                 <span style={{ position: 'absolute', top: '15px', right: '-10px', background: '#555', color: 'white', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '4px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
@@ -165,14 +166,18 @@ const HomeScreen = () => {
                 </span>
               )}
 
-              <img src={product.image} alt={product.name} style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', marginBottom: '15px', filter: isVisualGrayOut ? 'grayscale(100%)' : 'none' }} />
+              <img 
+                src={product.image} 
+                alt={product.name} 
+                className={`product-grid-image ${isVisualGrayOut ? 'gray-out' : ''}`} 
+              />
 
-              <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>{product.name}</h3>
-              <p style={{ margin: '0 0 5px 0', color: '#666', fontSize: '0.9rem' }}>{product.brand} | {product.category}</p>
-              <p style={{ margin: '0 0 15px 0', fontWeight: 'bold', color: '#333' }}>THC: {product.thcContent}%</p>
+              <h3 className="product-grid-title">{product.name}</h3>
+              <p className="product-grid-brand">{product.brand} | {product.category}</p>
+              <p className="product-grid-thc">THC: {product.thcContent}%</p>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', paddingTop: '15px' }}>
-                <span style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>${(product.price / 100).toFixed(2)}</span>
+              <div className="product-grid-footer">
+                <span className="product-grid-price">${(product.price / 100).toFixed(2)}</span>
                 <Link 
                   to={`/product/${product._id}`} 
                   style={{ display: 'inline-block', padding: '8px 16px', background: '#f5f5f5', color: 'black', textDecoration: 'none', borderRadius: '6px', fontWeight: 'bold', transition: 'background 0.2s' }}

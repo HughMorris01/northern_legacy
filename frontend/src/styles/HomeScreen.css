@@ -1,0 +1,88 @@
+/* frontend/src/styles/HomeScreen.css */
+
+/* --- Default Mobile Styles (Tight & Condensed) --- */
+.product-grid-card {
+    border: 1px solid #eaeaea;
+    border-radius: 12px;
+    position: relative;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: all 0.3s;
+    padding: 12px; /* Tighter padding */
+}
+
+.product-grid-card.gray-out {
+    opacity: 0.6;
+}
+
+.product-grid-image {
+    width: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    height: 140px; /* Shorter image height */
+    margin-bottom: 10px; /* Less white space */
+}
+
+.product-grid-image.gray-out {
+    filter: grayscale(100%);
+}
+
+.product-grid-title {
+    margin: 0 0 5px 0;
+    font-size: 1.1rem;
+}
+
+.product-grid-brand {
+    color: #666;
+    font-size: 0.8rem;
+    margin: 0 0 2px 0; /* Tighter spacing */
+}
+
+.product-grid-thc {
+    font-weight: bold;
+    color: #333;
+    font-size: 0.9rem;
+    margin: 0 0 10px 0;
+}
+
+.product-grid-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 10px;
+}
+
+.product-grid-price {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+/* --- Desktop Breakpoint (Spacious & Restored) --- */
+@media (min-width: 768px) {
+    .product-grid-card {
+        padding: 20px;
+    }
+    .product-grid-image {
+        height: 200px;
+        margin-bottom: 15px;
+    }
+    .product-grid-title {
+        margin: 0 0 10px 0;
+        font-size: 1.2rem;
+    }
+    .product-grid-brand {
+        font-size: 0.9rem;
+        margin: 0 0 5px 0;
+    }
+    .product-grid-thc {
+        font-size: 1rem;
+        margin: 0 0 15px 0;
+    }
+    .product-grid-footer {
+        padding-top: 15px;
+    }
+    .product-grid-price {
+        font-size: 1.25rem;
+    }
+}
