@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import axios from '../axios';
 import useAuthStore from '../store/authStore';
-import useCartStore from '../store/cartStore'; // NEW: Imported Cart Store
+import useCartStore from '../store/cartStore'; 
 import { toast } from 'react-toastify';
 import Loader from '../components/Loader';
 
@@ -20,12 +20,16 @@ const LoginScreen = () => {
   const userInfo = useAuthStore((state) => state.userInfo);
   const setCredentials = useAuthStore((state) => state.setCredentials);
   
-  // NEW: Bring in the merge function
   const mergeCarts = useCartStore((state) => state.mergeCarts); 
 
+  // THE FIX: Check verification status on load if they are already logged in
   useEffect(() => {
     if (userInfo) {
-      navigate(redirect);
+      if (!userInfo.isVerified && redirect !== '/profile') {
+        navigate(`/verify?redirect=${redirect}`);
+      } else {
+        navigate(redirect);
+      }
     }
   }, [navigate, redirect, userInfo]);
 
@@ -34,11 +38,9 @@ const LoginScreen = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      // 1. Log the user in
       const { data } = await axios.post('/api/users/login', { email, password });
       setCredentials(data);
       
-      // 2. THE FIX: Fetch and restore their saved cart from the database
       try {
         const { data: dbCart } = await axios.get('/api/users/cart');
         mergeCarts(dbCart);
@@ -47,7 +49,14 @@ const LoginScreen = () => {
       }
 
       toast.success('Login successful!');
-      navigate(redirect);
+      
+      // THE FIX: Intercept the route if they aren't verified!
+      if (!data.isVerified && redirect !== '/profile') {
+        navigate(`/verify?redirect=${redirect}`);
+      } else {
+        navigate(redirect);
+      }
+
     } catch (err) {
       toast.error(err.response?.data?.message || 'Invalid email or password');
       setLoading(false);
@@ -58,13 +67,11 @@ const LoginScreen = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       setLoading(true);
-      // 1. Authenticate with Google
       const { data } = await axios.post('/api/users/google', {
         credential: credentialResponse.credential,
       });
       setCredentials(data);
       
-      // 2. THE FIX: Fetch and restore their saved cart from the database
       try {
         const { data: dbCart } = await axios.get('/api/users/cart');
         mergeCarts(dbCart);
@@ -73,7 +80,14 @@ const LoginScreen = () => {
       }
 
       toast.success('Successfully authenticated with Google!');
-      navigate(redirect);
+      
+      // THE FIX: Intercept the route if they aren't verified!
+      if (!data.isVerified && redirect !== '/profile') {
+        navigate(`/verify?redirect=${redirect}`);
+      } else {
+        navigate(redirect);
+      }
+
     } catch (err) {
       toast.error(err.response?.data?.message || 'Google authentication failed');
       setLoading(false);
