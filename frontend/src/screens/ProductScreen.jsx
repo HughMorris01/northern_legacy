@@ -100,6 +100,7 @@ const ProductScreen = () => {
   const isCartMaxedOut = product.stockQuantity > 0 && availableStock === 0;
   const isVisualGrayOut = isDbOutOfStock || isCartMaxedOut; 
   const isLowStock = availableStock > 0 && availableStock <= 5;
+  const isSpecial = product.isOnSpecial; 
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: 'clamp(5px, 2vw, 20px)', fontFamily: 'sans-serif' }}>
@@ -108,7 +109,8 @@ const ProductScreen = () => {
         to="/" 
         style={{ 
           display: 'inline-flex', alignItems: 'center', gap: '5px',
-          marginBottom: '10px', textDecoration: 'none', color: '#333', 
+          marginBottom: '20px', 
+          textDecoration: 'none', color: '#333', 
           fontWeight: 'bold', fontSize: '0.85rem', padding: '8px 16px',
           background: '#fff', border: '1px solid #ddd', borderRadius: '20px',
           boxShadow: '0 2px 4px rgba(0,0,0,0.05)', transition: 'all 0.2s'
@@ -119,23 +121,54 @@ const ProductScreen = () => {
         &larr; Back to Menu
       </Link>
       
-      <div className="product-card">
+      <div 
+        className="product-card" 
+        style={{ 
+          position: 'relative', 
+          ...(isSpecial && !isVisualGrayOut ? { border: '2px solid #ffc53d', boxShadow: '0 0 12px rgba(255,197,61,0.5)' } : {}) 
+        }}
+      >
         
-        <div className="image-container">
-          {product.isLimitedRelease && <span className="badge badge-limited">🔥 Limited</span>}
-          {isDbOutOfStock && <span className="badge badge-out">Out of Stock</span>}
-          {isCartMaxedOut && <span className="badge badge-maxed">Cart Maxed</span>}
+        {/* THE FIX: Special badge centered at the top */}
+        {isSpecial && !isVisualGrayOut && (
+          <span style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', background: '#ffc53d', color: '#111', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
+            🌟 On Special!
+          </span>
+        )}
+
+        {/* THE FIX: Limited Drop moved to the top left */}
+        {product.isLimitedRelease && !isVisualGrayOut && (
+          <span style={{ position: 'absolute', top: '-12px', left: '-6px', background: '#e0282e', color: 'white', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}>
+            💎 Limited Drop
+          </span>
+        )}
+
+        {/* THE FIX: Wrapping the image in a relative container so inventory warnings lock to the bottom right! */}
+        <div className="image-container" style={{ position: 'relative' }}>
           
-          {isLowStock && !isDbOutOfStock && !isCartMaxedOut && (
-            <span className="badge badge-low">Almost Gone! ({availableStock} left)</span>
+          {isDbOutOfStock && (
+            <span style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#555', color: 'white', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+              Out of Stock
+            </span>
           )}
 
-          {/* THE FIX: Moved the comment outside of the actual img tag! */}
+          {isCartMaxedOut && !isDbOutOfStock && (
+            <span style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#d48806', color: 'white', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+              Cart Maxed
+            </span>
+          )}
+
+          {isLowStock && !isDbOutOfStock && !isCartMaxedOut && (
+            <span style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#ff4d4f', color: 'white', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+              Almost Gone! ({availableStock} left)
+            </span>
+          )}
+
           <img 
             src={product.image || '/assets/placeholder.jpg'} 
             alt={product.name} 
             className={`product-image ${isVisualGrayOut ? 'gray-out' : ''}`}
-            style={{ width: '100%', maxHeight: '35vh', objectFit: 'cover', borderRadius: '8px' }}
+            style={{ width: '100%', maxHeight: '35vh', objectFit: 'cover', borderRadius: '8px', display: 'block' }}
           />
         </div>
 
@@ -153,7 +186,8 @@ const ProductScreen = () => {
           </div>
 
           <h1 style={{ margin: '0 0 5px 0', fontSize: 'clamp(1.2rem, 4vw, 1.8rem)', lineHeight: '1.1' }}>{product.name}</h1>
-          <h2 style={{ margin: '0 0 10px 0', fontSize: 'clamp(1.1rem, 3.5vw, 1.5rem)', color: '#111' }}>
+          
+          <h2 style={{ margin: '0 0 10px 0', fontSize: 'clamp(1.1rem, 3.5vw, 1.5rem)', color: isSpecial && !isVisualGrayOut ? '#d48806' : '#111' }}>
             ${product.price ? (product.price / 100).toFixed(2) : '0.00'}
           </h2>
 

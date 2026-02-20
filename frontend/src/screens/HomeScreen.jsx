@@ -46,15 +46,13 @@ const HomeScreen = () => {
 
   const cartItems = useCartStore((state) => state.cartItems);
 
-  // --- PROGRESSIVE SCROLL TO TOP STATE ---
   const [showScrollTop, setShowScrollTop] = useState(false);
   const scrollReqRef = useRef(null);
   const scrollSpeedRef = useRef(2); 
 
-  // --- INFINITE SLIDER REFS ---
   const sliderRef = useRef(null);
   const isSliderHovered = useRef(false);
-  const isManualScrolling = useRef(false); // Prevents autoScroll from fighting the arrow buttons
+  const isManualScrolling = useRef(false); 
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -103,13 +101,11 @@ const HomeScreen = () => {
     }
   };
 
-  // --- THE FIX: Arrow button smooth-scrolling handlers ---
   const handleScrollLeft = () => {
     isManualScrolling.current = true;
     if (sliderRef.current) {
       sliderRef.current.scrollBy({ left: -320, behavior: 'smooth' });
     }
-    // Suspends the auto-scrolling just long enough for the smooth animation to finish
     setTimeout(() => { isManualScrolling.current = false; }, 600); 
   };
 
@@ -127,7 +123,6 @@ const HomeScreen = () => {
     ? products 
     : products.filter((p) => p.category === selectedCategory);
 
-  // Multiply by 6 to ensure we have a massive track to scroll infinitely through
   const infiniteLimitedProducts = [
     ...limitedReleaseProducts, ...limitedReleaseProducts, ...limitedReleaseProducts,
     ...limitedReleaseProducts, ...limitedReleaseProducts, ...limitedReleaseProducts
@@ -135,15 +130,13 @@ const HomeScreen = () => {
   
   const infiniteSpecials = [...specials, ...specials, ...specials, ...specials, ...specials, ...specials];
 
-  // --- THE FIX: The highly-refined infinite scroll engine ---
   useEffect(() => {
     const slider = sliderRef.current;
     if (!slider || limitedReleaseProducts.length === 0) return;
 
     let animationFrameId;
 
-    // Wait 200ms for images to render, then fast-forward the scroll bar exactly to the middle!
-    setTimeout(() => {
+    const initScroll = setTimeout(() => {
       if (sliderRef.current) {
         sliderRef.current.scrollLeft = sliderRef.current.scrollWidth / 2;
       }
@@ -151,18 +144,15 @@ const HomeScreen = () => {
 
     const autoScroll = () => {
       if (slider) {
-        // Only push the track forward if we aren't hovering or clicking a button
         if (!isSliderHovered.current && !isManualScrolling.current) {
           slider.scrollLeft += 0.8; 
         }
         
         const halfWidth = slider.scrollWidth / 2;
         
-        // Loop backward if we get too close to the right edge
         if (slider.scrollLeft >= halfWidth + 500) {
           slider.scrollLeft -= halfWidth;
         } 
-        // Loop forward if they use the left arrow button and get too close to the left edge
         else if (slider.scrollLeft <= 5) {
           slider.scrollLeft += halfWidth;
         }
@@ -173,6 +163,7 @@ const HomeScreen = () => {
     animationFrameId = requestAnimationFrame(autoScroll);
 
     return () => {
+      clearTimeout(initScroll);
       cancelAnimationFrame(animationFrameId);
     };
   }, [limitedReleaseProducts.length]);
@@ -230,7 +221,6 @@ const HomeScreen = () => {
           <div style={{ marginBottom: '30px', marginTop: '15px' }}>
             <h2 style={{ fontSize: '1.2rem', marginBottom: '15px', color: '#e0282e' }}>💎 Exclusive & Limited Release</h2>
             
-            {/* THE FIX: This wrapper now catches the hover event for BOTH the buttons and the track */}
             <div 
               style={{ position: 'relative' }}
               onMouseEnter={() => { isSliderHovered.current = true; }}
@@ -241,35 +231,76 @@ const HomeScreen = () => {
               <button className="slider-arrow left" onClick={handleScrollLeft}>&#8249;</button>
               
               <div ref={sliderRef} className="hide-scrollbar" style={{ display: 'flex', gap: '20px', overflowX: 'auto', paddingTop: '15px', paddingBottom: '15px', scrollSnapType: 'none', scrollBehavior: 'auto' }}>
-                {infiniteLimitedProducts.map((product, index) => (
-                  <div key={`limited-${product._id}-${index}`} style={{ minWidth: 'clamp(240px, 70vw, 280px)', border: '2px solid #e0282e', borderRadius: '10px', position: 'relative', background: '#fff', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
-                    
-                    <span style={{ position: 'absolute', top: '-12px', left: '-10px', background: '#e0282e', color: 'white', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}>
-                      💎 Limited Drop
-                    </span>
-                    
-                    <img src={product.image} alt={product.name} style={{ width: '100%', height: '180px', objectFit: 'cover', borderTopLeftRadius: '8px', borderTopRightRadius: '8px' }} />
-                    
-                    <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'space-between' }}>
-                      <div>
-                        <h3 style={{ margin: '0 0 5px 0', fontSize: '1.1rem' }}>{product.name}</h3>
-                        <p style={{ margin: '0 0 15px 0', color: '#666', fontSize: '0.85rem' }}>{product.brand} | {product.category}</p>
+                {infiniteLimitedProducts.map((product, index) => {
+                  const existItem = cartItems.find((x) => x._id === product._id);
+                  const qtyInCart = existItem ? existItem.qty : 0;
+                  const availableStock = (product.stockQuantity || 0) - qtyInCart;
+
+                  const isDbOutOfStock = product.stockQuantity === 0;
+                  const isCartMaxedOut = product.stockQuantity > 0 && availableStock <= 0;
+                  const isVisualGrayOut = isDbOutOfStock || isCartMaxedOut;
+                  const isLowStock = availableStock > 0 && availableStock <= 5;
+                  const isSpecial = product.isOnSpecial;
+
+                  return (
+                    <div key={`limited-${product._id}-${index}`} className={`product-grid-card ${isVisualGrayOut ? 'gray-out' : ''}`} style={{ minWidth: 'clamp(240px, 70vw, 280px)', border: '2px solid #e0282e', borderRadius: '10px', position: 'relative', background: '#fff', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', padding: 0 }}>
+                      
+                      {/* THE FIX: Limited Drop stays top left */}
+                      <span style={{ position: 'absolute', top: '-12px', left: '-10px', background: '#e0282e', color: 'white', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}>
+                        💎 Limited Drop
+                      </span>
+
+                      {/* THE FIX: On Special moved to the absolute top center using X translation */}
+                      {isSpecial && !isVisualGrayOut && (
+                        <span style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', background: '#ffc53d', color: '#111', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
+                          🌟 On Special!
+                        </span>
+                      )}
+
+                      <div style={{ position: 'relative' }}>
+                        {/* THE FIX: All inventory warnings permanently locked to the bottom right of the image wrapper */}
+                        {isDbOutOfStock && (
+                          <span style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#555', color: 'white', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                            Out of Stock
+                          </span>
+                        )}
+
+                        {isCartMaxedOut && !isDbOutOfStock && (
+                          <span style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#d48806', color: 'white', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                            Cart Maxed
+                          </span>
+                        )}
+
+                        {isLowStock && !isDbOutOfStock && !isCartMaxedOut && (
+                          <span style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#ff4d4f', color: 'white', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                            Almost Gone! ({availableStock} left)
+                          </span>
+                        )}
                         
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
-                          <p style={{ margin: 0, fontWeight: 'bold', color: '#333' }}>THC: {product.thcContent}%</p>
-                          <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 'bold', color: '#888' }}>
-                            {getFractionalDisplay(product)}
-                          </p>
+                        <img src={product.image} alt={product.name} className={`product-grid-image ${isVisualGrayOut ? 'gray-out' : ''}`} style={{ width: '100%', height: '180px', objectFit: 'cover', borderTopLeftRadius: '8px', borderTopRightRadius: '8px', marginBottom: 0, display: 'block' }} />
+                      </div>
+                      
+                      <div style={{ padding: '15px', display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'space-between' }}>
+                        <div>
+                          <h3 style={{ margin: '0 0 5px 0', fontSize: '1.1rem' }}>{product.name}</h3>
+                          <p style={{ margin: '0 0 15px 0', color: '#666', fontSize: '0.85rem' }}>{product.brand} | {product.category}</p>
+                          
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                            <p style={{ margin: 0, fontWeight: 'bold', color: '#333' }}>THC: {product.thcContent}%</p>
+                            <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 'bold', color: '#888' }}>
+                              {getFractionalDisplay(product)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 'bold', fontSize: '1.15rem' }}>${(product.price / 100).toFixed(2)}</span>
+                          <Link to={`/product/${product._id}`} style={{ padding: '8px 15px', background: 'black', color: 'white', textDecoration: 'none', borderRadius: '6px', fontSize: '0.9rem', fontWeight: 'bold' }}>View</Link>
                         </div>
                       </div>
-
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontWeight: 'bold', fontSize: '1.15rem' }}>${(product.price / 100).toFixed(2)}</span>
-                        <Link to={`/product/${product._id}`} style={{ padding: '8px 15px', background: 'black', color: 'white', textDecoration: 'none', borderRadius: '6px', fontSize: '0.9rem', fontWeight: 'bold' }}>View</Link>
-                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <button className="slider-arrow right" onClick={handleScrollRight}>&#8250;</button>
@@ -297,23 +328,23 @@ const HomeScreen = () => {
               {cat}
             </button>
           ))}
-          {/* THE FIX: Moved the Merch button globally to the Header */}
-        <Link 
-          to="/merch" 
-          style={{
-                padding: '8px 20px',
-                borderRadius: '30px',
-                border: '1px solid #ccc',
-                background: 'black',
-                color: 'white',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                transition: 'all 0.2s'
-              }}
-        >
-          👕 Merch
-        </Link>
+          <Link 
+            to="/merch" 
+            style={{
+                  padding: '8px 20px',
+                  borderRadius: '30px',
+                  border: '1px solid #ccc',
+                  background: 'black',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s',
+                  textDecoration: 'none'
+                }}
+          >
+            👕 Merch
+          </Link>
         </div>
 
         <div className="product-grid-container">
@@ -328,6 +359,7 @@ const HomeScreen = () => {
             const isCartMaxedOut = product.stockQuantity > 0 && availableStock <= 0;
             const isVisualGrayOut = isDbOutOfStock || isCartMaxedOut;
             const isSpecial = product.isOnSpecial; 
+            const isLowStock = availableStock > 0 && availableStock <= 5;
 
             return (
               <div 
@@ -336,35 +368,52 @@ const HomeScreen = () => {
                 style={isSpecial && !isVisualGrayOut ? { border: '2px solid #ffc53d', boxShadow: '0 0 12px rgba(255,197,61,0.5)' } : {}}
               >
                 
+                {/* THE FIX: Centered the special badge on the main grid cards too */}
                 {isSpecial && !isVisualGrayOut && (
-                  <span style={{ position: 'absolute', top: '-10px', left: '-10px', background: '#ffc53d', color: '#111', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
+                  <span style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', background: '#ffc53d', color: '#111', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
                     🌟 On Special!
                   </span>
                 )}
 
-                {isDbOutOfStock && (
-                  <span style={{ position: 'absolute', top: '15px', right: '15px', background: '#555', color: 'white', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '4px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
-                    Out of Stock
+                {/* THE FIX: Render Limited Drop independently of Special status */}
+                {product.isLimitedRelease && !isVisualGrayOut && (
+                  <span style={{ position: 'absolute', top: '-10px', left: '-10px', background: '#e0282e', color: 'white', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
+                    💎 Limited Drop
                   </span>
                 )}
 
-                {isCartMaxedOut && !isDbOutOfStock && (
-                  <span style={{ position: 'absolute', top: '15px', right: '15px', background: '#d48806', color: 'white', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '4px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
-                    Cart Maxed
-                  </span>
-                )}
+                <div className="product-image-wrapper">
+                  {/* THE FIX: Permanently locked the inventory warnings to the bottom right */}
+                  {isDbOutOfStock && (
+                    <span style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#555', color: 'white', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                      Out of Stock
+                    </span>
+                  )}
+
+                  {isCartMaxedOut && !isDbOutOfStock && (
+                    <span style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#d48806', color: 'white', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                      Cart Maxed
+                    </span>
+                  )}
+
+                  {isLowStock && !isDbOutOfStock && !isCartMaxedOut && (
+                    <span style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#ff4d4f', color: 'white', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                      Almost Gone! ({availableStock} left)
+                    </span>
+                  )}
+
+                  <img 
+                    src={product.image} 
+                    alt={product.name} 
+                    className={`product-grid-image ${isVisualGrayOut ? 'gray-out' : ''}`} 
+                  />
+                </div>
 
                 {product.strainType && (
                   <span style={{ display: 'inline-block', background: strain.bg, border: `1px solid ${strain.border}`, color: strain.text, padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', marginBottom: '10px', textTransform: 'uppercase' }}>
                     {product.strainType}
                   </span>
                 )}
-
-                <img 
-                  src={product.image} 
-                  alt={product.name} 
-                  className={`product-grid-image ${isVisualGrayOut ? 'gray-out' : ''}`} 
-                />
 
                 <h3 className="product-grid-title">{product.name}</h3>
                 <p className="product-grid-brand">{product.brand} | {product.category}</p>

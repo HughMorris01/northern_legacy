@@ -2,12 +2,9 @@
 
 .product-grid-container {
     display: grid;
-    /* Safely reverted to your original responsive 2-column code */
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
     gap: 12px; 
     margin-top: 10px;
-    width: 100%;
-    box-sizing: border-box;
 }
 
 /* --- Default Mobile Styles --- */
@@ -19,12 +16,16 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     transition: all 0.3s;
     padding: 10px; 
-    box-sizing: border-box; 
-    /* THE FIX: Removed display: flex and flex-direction: column so badges shrink-wrap properly! */
 }
 
 .product-grid-card.gray-out {
     opacity: 0.6;
+}
+
+/* THE FIX: A dedicated wrapper to allow perfectly responsive absolute positioning on the badges */
+.product-image-wrapper {
+    position: relative;
+    margin-bottom: 6px;
 }
 
 .product-grid-image {
@@ -32,7 +33,7 @@
     object-fit: cover;
     border-radius: 8px;
     height: 160px; 
-    margin-bottom: 6px; 
+    display: block; /* Removes default HTML descender spacing */
 }
 
 .product-grid-image.gray-out {
@@ -123,7 +124,10 @@
         gap: 25px; 
     }
     .product-grid-card { padding: 20px; }
-    .product-grid-image { height: 200px; margin-bottom: 15px; }
+    
+    .product-image-wrapper { margin-bottom: 15px; }
+    .product-grid-image { height: 200px; }
+    
     .product-grid-title { margin: 0 0 10px 0; font-size: 1.2rem; }
     .product-grid-brand { font-size: 0.9rem; margin: 0 0 5px 0; }
     .product-grid-thc { font-size: 1rem; margin: 0 0 15px 0; }
