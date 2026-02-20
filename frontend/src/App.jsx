@@ -10,7 +10,7 @@ import ProductScreen from './screens/ProductScreen';
 import CartScreen from './screens/CartScreen';
 import OrderTypeScreen from './screens/OrderTypeScreen';
 import ShippingScreen from './screens/ShippingScreen';
-import PaymentScreen from './screens/PaymentScreen';
+import PaymentMethodScreen from './screens/PaymentMethodScreen';
 import PlaceOrderScreen from './screens/PlaceOrderScreen';
 import OrderConfirmationScreen from './screens/OrderConfirmationScreen';
 import LoginScreen from './screens/LoginScreen';
@@ -18,7 +18,7 @@ import RegisterScreen from './screens/RegisterScreen';
 import ProfileDashboardScreen from './screens/ProfileDashboardScreen';
 import EditContactScreen from './screens/EditContactScreen';
 import EditDeliveryScreen from './screens/EditDeliveryScreen';
-import EditBankScreen from './screens/EditBankScreen';
+import EditPaymentMethodScreen from './screens/EditPaymentMethodScreen';
 import VerificationScreen from './screens/VerificationScreen';
 
 
@@ -39,14 +39,14 @@ const App = () => {
             <Route path="/register" element={<RegisterScreen />} />
             <Route path='/order-type' element={<OrderTypeScreen />} />
             <Route path="/shipping" element={<ShippingScreen />} />
-            <Route path="/payment" element={<PaymentScreen />} />
+            <Route path="/payment" element={<PaymentMethodScreen />} />
             <Route path="/placeorder" element={<PlaceOrderScreen />} />
             <Route path="/order/:id" element={<OrderConfirmationScreen />} />
             <Route path="/profile" element={<ProfileDashboardScreen />} />
             <Route path="/verify" element={<VerificationScreen />} />
             <Route path="/profile/contact" element={<EditContactScreen />} />
             <Route path="/profile/delivery" element={<EditDeliveryScreen />} />
-            <Route path="/profile/bank" element={<EditBankScreen />} />
+            <Route path="/profile/bank" element={<EditPaymentMethodScreen />} />
           </Routes>
         </main>
       </AutoLogoutHandler>

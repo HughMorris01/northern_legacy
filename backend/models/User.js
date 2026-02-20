@@ -75,7 +75,8 @@ const userSchema = new mongoose.Schema({
     postalCode: { type: String },
   },
   syncAddresses: { type: Boolean, default: false },
-  linkedBank: { type: String, default: '' },
+  linkedAch: { type: String, default: '' },
+  linkedDebit: { type: String, default: '' },
 
   // --- COMPLIANCE & ENFORCEMENT ---
   deliveryStrikes: [{

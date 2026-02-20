@@ -208,13 +208,22 @@ const ProfileDashboardScreen = () => {
               </button>
             </div>
             
-            <div style={{ padding: '15px', background: '#f9f9f9', border: '1px solid #ddd', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
+            {/* THE FIX: Displays BOTH slots elegantly */}
+            <div style={{ padding: '15px', background: '#f9f9f9', border: '1px solid #ddd', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <div style={{ borderBottom: '1px solid #eaeaea', paddingBottom: '15px' }}>
                 <p style={{ margin: 0, fontWeight: 'bold', color: '#111', fontSize: '1.05rem' }}>🏦 Aeropay Digital ACH</p>
-                {profileData?.linkedBank ? (
-                  <p style={{ margin: '5px 0 0 0', color: '#389e0d', fontSize: '0.9rem', fontWeight: 'bold' }}>Active Link: {profileData.linkedBank}</p>
+                {profileData?.linkedAch ? (
+                  <p style={{ margin: '5px 0 0 0', color: '#389e0d', fontSize: '0.9rem', fontWeight: 'bold' }}>Active Link: {profileData.linkedAch}</p>
                 ) : (
                   <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '0.9rem' }}>No active account linked.</p>
+                )}
+              </div>
+              <div>
+                <p style={{ margin: 0, fontWeight: 'bold', color: '#111', fontSize: '1.05rem' }}>💳 Secure Debit Card</p>
+                {profileData?.linkedDebit ? (
+                  <p style={{ margin: '5px 0 0 0', color: '#389e0d', fontSize: '0.9rem', fontWeight: 'bold' }}>Active Link: {profileData.linkedDebit}</p>
+                ) : (
+                  <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '0.9rem' }}>No active card linked.</p>
                 )}
               </div>
             </div>
@@ -239,7 +248,6 @@ const ProfileDashboardScreen = () => {
               {profileData?.syncName && <span style={{ fontSize: '0.8rem', color: '#1890ff', marginLeft: '10px', fontWeight: 'bold' }}>(Synced to Legal)</span>}
             </p>
             
-            {/* THE FIX: Adjusted padding down to 3px on the left side */}
             <div style={{ padding: '12px 15px 12px 3px', background: '#fafafa', borderRadius: '6px', marginBottom: '10px', borderLeft: profileData?.emailOptIn ? '3px solid #1890ff' : '4px solid #ccc' }}>
               <p style={{ margin: '0 0 5px 0', fontSize: '1.05rem' }}>
                 <strong>Contact Email:</strong> {profileData?.emailOptIn && profileData?.contactEmail ? profileData.contactEmail : <span style={{ color: '#999', fontStyle: 'italic' }}>Opted Out</span>}
@@ -328,7 +336,6 @@ const ProfileDashboardScreen = () => {
             </span>
           </div>
 
-          {/* THE FIX: Render a faded preview of the first order when the accordion is closed */}
           {!showOrders && orders.length > 0 && (
             <div 
               onClick={() => setShowOrders(true)}

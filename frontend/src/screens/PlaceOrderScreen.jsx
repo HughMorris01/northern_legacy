@@ -40,7 +40,6 @@ const PlaceOrderScreen = () => {
   const localTax = itemsPrice * TAX_RATES.LOCAL;  
   const stateTax = itemsPrice * TAX_RATES.STATE;  
   
-  // Conditionally apply the Debit Fee
   const debitFee = paymentMethod === 'Debit Card' ? 3.00 : 0;
   const totalPrice = itemsPrice + exciseTax + localTax + stateTax + debitFee;
 
@@ -94,23 +93,57 @@ const PlaceOrderScreen = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '20px', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '1000px', margin: '20px auto 40px', padding: '0 15px', fontFamily: 'sans-serif' }}>
       <CheckoutSteps step1 step2 step3 step4 step5 />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '40px', marginTop: '30px' }}>
+      {/* THE FIX: Dynamic CSS injected directly into the component to handle responsive re-ordering */}
+      <style>{`
+        .place-order-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          margin-top: 20px;
+        }
+        .order-summary-col {
+          order: -1; /* Pulls the summary to the VERY TOP on mobile! */
+          border: 1px solid #eaeaea;
+          padding: 20px;
+          border-radius: 12px;
+          background: #fff;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .order-details-col {
+          order: 1;
+        }
+        @media (min-width: 768px) {
+          .place-order-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 30px;
+            align-items: start;
+          }
+          .order-summary-col {
+            order: 2; /* Puts it back on the right side for desktop */
+            position: sticky;
+            top: 20px;
+          }
+        }
+      `}</style>
+
+      <div className="place-order-grid">
         
-        {/* LEFT COLUMN: Review Info */}
-        <div>
-          <div style={{ paddingBottom: '20px', borderBottom: '1px solid #eee', marginBottom: '20px' }}>
-            <h2 style={{ marginBottom: '15px' }}>Order Details</h2>
+        {/* LEFT COLUMN: Review Info (Rendered second on mobile) */}
+        <div className="order-details-col">
+          <div style={{ paddingBottom: '15px', borderBottom: '1px solid #eee', marginBottom: '15px' }}>
+            <h2 style={{ margin: '0 0 10px 0', fontSize: '1.3rem' }}>Order Details</h2>
             
-            <p style={{ margin: '5px 0' }}>
+            <p style={{ margin: '5px 0', fontSize: '0.95rem' }}>
               <strong>Name: </strong> {userInfo?.firstName} {userInfo?.lastName}
             </p>
-            <p style={{ margin: '5px 0' }}>
+            <p style={{ margin: '5px 0', fontSize: '0.95rem' }}>
               <strong>Order Type: </strong> {orderTypeDisplay}
             </p>
-            <p style={{ margin: '5px 0' }}>
+            <p style={{ margin: '5px 0', fontSize: '0.95rem', lineHeight: '1.4' }}>
               <strong>Address: </strong> 
               {isPickup 
                 ? 'Northern Legacy Store' 
@@ -118,31 +151,30 @@ const PlaceOrderScreen = () => {
               }
             </p>
             
-            {/* THE FIX: Dynamically display the chosen scheduling window! */}
             {!isPickup && shippingAddress.deliveryDate && (
-              <p style={{ margin: '5px 0', color: '#1890ff', fontWeight: 'bold' }}>
-                <strong>Delivery Window: </strong> {shippingAddress.deliveryTimeSlot} on {shippingAddress.deliveryDate}
+              <p style={{ margin: '8px 0 0 0', color: '#1890ff', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                Delivery Window: {shippingAddress.deliveryTimeSlot} on {shippingAddress.deliveryDate}
               </p>
             )}
           </div>
 
-          <div style={{ paddingBottom: '20px', borderBottom: '1px solid #eee', marginBottom: '20px' }}>
-            <h2 style={{ marginBottom: '10px' }}>Payment Method</h2>
-            <p><strong>Method: </strong> {paymentMethod}</p>
+          <div style={{ paddingBottom: '15px', borderBottom: '1px solid #eee', marginBottom: '15px' }}>
+            <h2 style={{ margin: '0 0 10px 0', fontSize: '1.3rem' }}>Payment Method</h2>
+            <p style={{ margin: 0, fontSize: '0.95rem' }}><strong>Method: </strong> {paymentMethod}</p>
           </div>
 
           <div>
-            <h2 style={{ marginBottom: '15px' }}>Order Items</h2>
+            <h2 style={{ margin: '0 0 10px 0', fontSize: '1.3rem' }}>Order Items</h2>
             {cartItems.length === 0 ? (
               <p>Your cart is empty.</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {cartItems.map((item, index) => (
-                  <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Link to={`/product/${item._id}`} style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 'bold' }}>
+                  <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', padding: '10px', borderRadius: '6px', border: '1px solid #eee' }}>
+                    <Link to={`/product/${item._id}`} style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 'bold', fontSize: '0.95rem' }}>
                       {item.name}
                     </Link>
-                    <span>
+                    <span style={{ fontSize: '0.95rem' }}>
                       {item.qty} x ${(item.price / 100).toFixed(2)} = <strong>${((item.qty * item.price) / 100).toFixed(2)}</strong>
                     </span>
                   </div>
@@ -152,20 +184,20 @@ const PlaceOrderScreen = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Order Summary */}
-        <div style={{ border: '1px solid #ccc', padding: '25px', borderRadius: '8px', height: 'fit-content', background: '#f9f9f9', position: 'sticky', top: '20px' }}>
-          <h2 style={{ marginTop: 0, marginBottom: '20px', borderBottom: '2px solid #ddd', paddingBottom: '10px' }}>Order Summary</h2>
+        {/* RIGHT COLUMN: Order Summary (Rendered FIRST on mobile) */}
+        <div className="order-summary-col">
+          <h2 style={{ marginTop: 0, marginBottom: '15px', borderBottom: '2px solid #ddd', paddingBottom: '10px', fontSize: '1.4rem' }}>Order Summary</h2>
           
-          {error && !inventoryIssue && <div style={{ background: '#ff4d4f', color: 'white', padding: '10px', borderRadius: '5px', marginBottom: '15px' }}>{error}</div>}
+          {error && !inventoryIssue && <div style={{ background: '#ff4d4f', color: 'white', padding: '10px', borderRadius: '5px', marginBottom: '15px', fontSize: '0.9rem', fontWeight: 'bold' }}>{error}</div>}
 
           {inventoryIssue && (
-            <div style={{ background: '#fffbe6', border: '1px solid #ffe58f', padding: '15px', borderRadius: '8px', marginBottom: '20px', animation: 'fadeIn 0.3s' }}>
-              <h3 style={{ color: '#d48806', margin: '0 0 10px 0', fontSize: '1.1rem' }}>⚠️ Cart Adjustment Needed</h3>
-              <p style={{ margin: '0 0 15px 0', color: '#666', fontSize: '0.9rem' }}>{inventoryIssue.message}</p>
+            <div style={{ background: '#fffbe6', border: '1px solid #ffe58f', padding: '15px', borderRadius: '8px', marginBottom: '15px', animation: 'fadeIn 0.3s' }}>
+              <h3 style={{ color: '#d48806', margin: '0 0 8px 0', fontSize: '1.05rem' }}>⚠️ Cart Adjustment Needed</h3>
+              <p style={{ margin: '0 0 12px 0', color: '#666', fontSize: '0.85rem', lineHeight: '1.4' }}>{inventoryIssue.message}</p>
               
               <button 
                 onClick={fixCartHandler}
-                style={{ width: '100%', padding: '10px', background: '#d48806', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}
+                style={{ width: '100%', padding: '10px', background: '#d48806', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.95rem' }}
               >
                 {inventoryIssue.remainingQty === 0 
                   ? `Remove ${inventoryIssue.product.name} from Cart` 
@@ -174,7 +206,7 @@ const PlaceOrderScreen = () => {
             </div>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.95rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Items:</span>
               <span>${addDecimals(itemsPrice)}</span>
@@ -184,15 +216,14 @@ const PlaceOrderScreen = () => {
               <span>${addDecimals(exciseTax)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#666' }}>
-              <span>Local Retail Tax ({(TAX_RATES.LOCAL * 100).toFixed(0)}%):</span>
+              <span>Local Tax ({(TAX_RATES.LOCAL * 100).toFixed(0)}%):</span>
               <span>${addDecimals(localTax)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#666' }}>
-              <span>State Sales Tax ({(TAX_RATES.STATE * 100).toFixed(0)}%):</span>
+              <span>State Tax ({(TAX_RATES.STATE * 100).toFixed(0)}%):</span>
               <span>${addDecimals(stateTax)}</span>
             </div>
 
-            {/* THE FIX: Conditionally render the Debit Convenience Fee! */}
             {debitFee > 0 && (
                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#666' }}>
                 <span>Debit Processing Fee:</span>
@@ -200,12 +231,11 @@ const PlaceOrderScreen = () => {
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #ddd', paddingTop: '15px', fontWeight: 'bold', fontSize: '1.2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #ddd', paddingTop: '12px', fontWeight: 'bold', fontSize: '1.2rem', marginTop: '5px' }}>
               <span>Total:</span>
               <span>${addDecimals(totalPrice)}</span>
             </div>
 
-            {/* THE FIX: Button simplified now that payment logic was cleanly moved to the PaymentScreen */}
             <button 
               onClick={executeFinalOrder}
               disabled={cartItems.length === 0 || loading || inventoryIssue}

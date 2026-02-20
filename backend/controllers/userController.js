@@ -239,7 +239,8 @@ const getUserProfile = async (req, res) => {
         address: user.address || {}, 
         mailingAddress: user.mailingAddress || {},
         syncAddresses: user.syncAddresses || false,
-        linkedBank: user.linkedBank || '',
+        linkedAch: user.linkedAch || "",
+        linkedDebit: user.linkedDebit || "",
       });
     } else {
       res.status(404).json({ message: 'User not found.' });
@@ -258,7 +259,7 @@ const updateUserProfile = async (req, res) => {
     const user = await User.findById(req.user._id);
 
     if (user) {
-      // --- NEW: Contact & Marketing Opt-Ins ---
+      // --- Contact & Marketing Opt-Ins ---
       if (req.body.emailOptIn !== undefined) user.emailOptIn = req.body.emailOptIn;
       if (req.body.smsOptIn !== undefined) user.smsOptIn = req.body.smsOptIn;
       if (req.body.mailOptIn !== undefined) user.mailOptIn = req.body.mailOptIn;
@@ -267,7 +268,9 @@ const updateUserProfile = async (req, res) => {
       if (req.body.contactEmail !== undefined) user.contactEmail = req.body.contactEmail;
       if (req.body.phoneNumber !== undefined) user.phoneNumber = req.body.phoneNumber;
       
-      if (req.body.linkedBank !== undefined) user.linkedBank = req.body.linkedBank;
+      // --- NEW: Dual Payment Methods ---
+      if (req.body.linkedAch !== undefined) user.linkedAch = req.body.linkedAch;
+      if (req.body.linkedDebit !== undefined) user.linkedDebit = req.body.linkedDebit;
 
       // THE EMAIL SYNC LOGIC
       if (user.syncEmail && user.emailOptIn) {
@@ -292,17 +295,18 @@ const updateUserProfile = async (req, res) => {
 
       // Address Updates
       if (req.body.syncAddresses !== undefined) user.syncAddresses = req.body.syncAddresses;
-      // Inside backend/controllers/userController.js -> updateUserProfile
+      
       if (req.body.address) {
         user.address = {
           street: req.body.address.street || user.address.street,
           city: req.body.address.city || user.address.city,
           postalCode: req.body.address.postalCode || user.address.postalCode,
           terrainType: req.body.address.terrainType || user.address.terrainType,
-          lat: req.body.address.lat || user.address.lat, // NEW
-          lng: req.body.address.lng || user.address.lng, // NEW
+          lat: req.body.address.lat || user.address.lat, 
+          lng: req.body.address.lng || user.address.lng, 
         };
       }
+      
       if (req.body.mailingAddress) {
         user.mailingAddress = {
           street: req.body.mailingAddress.street || user.mailingAddress?.street || '',
@@ -313,7 +317,7 @@ const updateUserProfile = async (req, res) => {
 
       // THE ADDRESS SYNC LOGIC
       if (user.syncAddresses) {
-        if (user.address.terrainType === 'Land') {
+        if (user.address && user.address.terrainType === 'Land') {
           user.mailingAddress = {
             street: user.address.street,
             city: user.address.city,
@@ -343,7 +347,8 @@ const updateUserProfile = async (req, res) => {
         preferredFirstName: updatedUser.preferredFirstName,
         preferredLastName: updatedUser.preferredLastName,
         syncName: updatedUser.syncName,
-        linkedBank: updatedUser.linkedBank,
+        linkedAch: updatedUser.linkedAch,       // Added to payload
+        linkedDebit: updatedUser.linkedDebit,   // Added to payload
       });
     } else {
       res.status(404).json({ message: 'User not found.' });

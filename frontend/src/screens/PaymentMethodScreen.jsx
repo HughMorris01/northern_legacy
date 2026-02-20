@@ -5,7 +5,7 @@ import CheckoutSteps from '../components/CheckoutSteps';
 import axios from '../axios';
 import { toast } from 'react-toastify';
 
-const PaymentScreen = () => {
+const PaymentMethodScreen = () => {
   const navigate = useNavigate();
 
   const shippingAddress = useCartStore((state) => state.shippingAddress);
@@ -14,9 +14,13 @@ const PaymentScreen = () => {
 
   const [paymentMethod, setPaymentMethod] = useState(currentPaymentMethod || 'Aeropay (ACH)');
   
-  // Saved Payment State
-  const [savedBank, setSavedBank] = useState('');
-  const [useSavedPayment, setUseSavedPayment] = useState(false);
+  // Independent Saved States
+  const [linkedAch, setLinkedAch] = useState('');
+  const [linkedDebit, setLinkedDebit] = useState('');
+
+  // Sub-selection states for overriding saved methods
+  const [useNewAch, setUseNewAch] = useState(false);
+  const [useNewDebit, setUseNewDebit] = useState(false);
 
   // Modal State Machine
   const [showModal, setShowModal] = useState(false);
@@ -25,6 +29,9 @@ const PaymentScreen = () => {
   const [fakeUsername, setFakeUsername] = useState('');
   const [fakePassword, setFakePassword] = useState('');
   const [fakeCard, setFakeCard] = useState('');
+  
+  // Controls whether the new modal data gets pushed to the user's DB profile
+  const [saveMethodToProfile, setSaveMethodToProfile] = useState(true);
 
   const isPickup = shippingAddress?.address === 'In-Store Pickup';
 
@@ -35,14 +42,10 @@ const PaymentScreen = () => {
       const fetchProfile = async () => {
         try {
           const { data } = await axios.get('/api/users/profile');
-          if (data.linkedBank) {
-            setSavedBank(data.linkedBank);
-            setUseSavedPayment(true);
-            if (data.linkedBank.includes('Card')) setPaymentMethod('Debit Card');
-            else setPaymentMethod('Aeropay (ACH)');
-          }
+          setLinkedAch(data.linkedAch || '');
+          setLinkedDebit(data.linkedDebit || '');
         } catch {
-          console.warn('No linked bank found on profile.');
+          console.warn('No linked methods found on profile.');
         }
       };
       fetchProfile();
@@ -52,15 +55,30 @@ const PaymentScreen = () => {
   const submitHandler = (e) => {
     e.preventDefault();
 
-    if (paymentMethod === 'Pay In-Store' || useSavedPayment) {
+    if (paymentMethod === 'Pay In-Store') {
       savePaymentMethod(paymentMethod);
       navigate('/placeorder');
-    } else {
-      setModalStep(paymentMethod === 'Debit Card' ? 'enter-card' : 'select-bank');
-      setFakeUsername('');
-      setFakePassword('');
-      setFakeCard('');
-      setShowModal(true);
+    } else if (paymentMethod === 'Aeropay (ACH)') {
+      if (linkedAch && !useNewAch) {
+        savePaymentMethod(paymentMethod);
+        navigate('/placeorder');
+      } else {
+        setModalStep('select-bank');
+        setFakeUsername('');
+        setFakePassword('');
+        setSaveMethodToProfile(true); // Default to true when opening
+        setShowModal(true);
+      }
+    } else if (paymentMethod === 'Debit Card') {
+      if (linkedDebit && !useNewDebit) {
+        savePaymentMethod(paymentMethod);
+        navigate('/placeorder');
+      } else {
+        setModalStep('enter-card');
+        setFakeCard('');
+        setSaveMethodToProfile(true); // Default to true when opening
+        setShowModal(true);
+      }
     }
   };
 
@@ -80,16 +98,21 @@ const PaymentScreen = () => {
       setTimeout(async () => {
         setShowModal(false);
         
-        // Save the newly linked method to their profile permanently!
         const linkedData = authType === 'ACH' 
           ? selectedBank 
           : `Debit Card ending in ${fakeCard.slice(-4)}`;
 
-        try {
-          await axios.put('/api/users/profile', { linkedBank: linkedData });
-          toast.success(`${linkedData} successfully securely linked!`);
-        } catch {
-          console.warn('Failed to save linked bank to profile');
+        // Only push to backend if the user left the sync checkbox checked!
+        if (saveMethodToProfile) {
+          try {
+            const payload = authType === 'ACH' ? { linkedAch: linkedData } : { linkedDebit: linkedData };
+            await axios.put('/api/users/profile', payload);
+            toast.success(`${linkedData} successfully saved to profile!`);
+          } catch {
+            console.warn('Failed to save linked method to profile');
+          }
+        } else {
+          toast.success(`${linkedData} authorized for this order!`);
         }
 
         savePaymentMethod(paymentMethod);
@@ -98,83 +121,111 @@ const PaymentScreen = () => {
     }, 2000);
   };
 
+  const getButtonText = () => {
+    if (paymentMethod === 'Pay In-Store') return 'Continue to Final Review';
+    if (paymentMethod === 'Aeropay (ACH)') return (linkedAch && !useNewAch) ? `Pay with ${linkedAch}` : 'Link New Bank Account';
+    if (paymentMethod === 'Debit Card') return (linkedDebit && !useNewDebit) ? `Pay with ${linkedDebit}` : 'Link New Debit Card';
+    return 'Continue';
+  };
+
   return (
-    <div style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
+    <div style={{ maxWidth: '600px', margin: '20px auto 40px', padding: '0 15px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
       <CheckoutSteps step1 step2 step3 step4 /> 
       
-      <div style={{ background: '#fff', padding: '30px', borderRadius: '12px', border: '1px solid #eaeaea', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-        <h2 style={{ marginTop: 0, marginBottom: '20px', borderBottom: '2px solid #ddd', paddingBottom: '10px' }}>Payment Method</h2>
+      <div style={{ background: '#fff', padding: '15px 20px 20px', borderRadius: '12px', border: '1px solid #eaeaea', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+        <h2 style={{ marginTop: 0, marginBottom: '15px', borderBottom: '2px solid #ddd', paddingBottom: '10px', fontSize: '1.4rem' }}>Payment Method</h2>
         
-        {savedBank && (
-          <div style={{ marginBottom: '20px', padding: '15px', background: useSavedPayment ? '#e6f7ff' : '#f5f5f5', border: `1px solid ${useSavedPayment ? '#91d5ff' : '#ddd'}`, borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.3s' }}>
-            <input 
-              type="checkbox" 
-              id="useSavedPaymentCheck"
-              checked={useSavedPayment}
-              onChange={(e) => {
-                setUseSavedPayment(e.target.checked);
-                if (e.target.checked) {
-                  setPaymentMethod(savedBank.includes('Card') ? 'Debit Card' : 'Aeropay (ACH)');
-                }
-              }}
-              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-            />
-            <label htmlFor="useSavedPaymentCheck" style={{ color: useSavedPayment ? '#096dd9' : '#666', fontWeight: 'bold', cursor: 'pointer' }}>
-              Use my linked payment method ({savedBank})
-            </label>
-          </div>
-        )}
-
-        <form onSubmit={submitHandler} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        <form onSubmit={submitHandler} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           
-          <div style={{ padding: '20px', background: paymentMethod === 'Aeropay (ACH)' ? '#fafafa' : 'white', border: `2px solid ${paymentMethod === 'Aeropay (ACH)' ? 'black' : '#eee'}`, borderRadius: '8px', transition: 'all 0.2s' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', fontSize: '1.1rem' }}>
+          {/* ACH BLOCK */}
+          <div style={{ padding: '15px', background: paymentMethod === 'Aeropay (ACH)' ? '#fafafa' : 'white', border: `2px solid ${paymentMethod === 'Aeropay (ACH)' ? 'black' : '#eee'}`, borderRadius: '8px', transition: 'all 0.2s' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '1.05rem' }}>
               <input 
                 type="radio" 
                 name="paymentMethod" 
                 value="Aeropay (ACH)" 
                 checked={paymentMethod === 'Aeropay (ACH)'} 
-                onChange={(e) => { setPaymentMethod(e.target.value); setUseSavedPayment(false); }} 
-                style={{ transform: 'scale(1.5)', cursor: 'pointer' }}
+                onChange={(e) => setPaymentMethod(e.target.value)} 
+                style={{ transform: 'scale(1.4)', cursor: 'pointer', margin: 0 }}
               />
               <strong>Aeropay (ACH / Bank Link)</strong>
             </label>
-            <p style={{ marginLeft: '32px', color: '#666', fontSize: '0.9rem', marginTop: '5px', marginBottom: 0 }}>
+            <p style={{ marginLeft: '30px', color: '#666', fontSize: '0.85rem', marginTop: '2px', marginBottom: '8px' }}>
               Secure, tokenized bank transfer with no added processing fees.
             </p>
+            
+            {linkedAch && (
+              <div style={{ marginLeft: '30px', padding: '10px', background: '#f5f5f5', borderRadius: '6px', border: '1px solid #ddd' }}>
+                <p style={{ color: '#389e0d', fontSize: '0.85rem', fontWeight: 'bold', margin: '0 0 8px 0' }}>✓ Saved Account: {linkedAch}</p>
+                
+                {paymentMethod === 'Aeropay (ACH)' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: 0 }}>
+                      <input type="radio" checked={!useNewAch} onChange={() => setUseNewAch(false)} style={{ margin: 0 }} />
+                      Use {linkedAch}
+                    </label>
+                    <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: 0 }}>
+                      <input type="radio" checked={useNewAch} onChange={() => setUseNewAch(true)} style={{ margin: 0 }} />
+                      Link a different bank account
+                    </label>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          <div style={{ padding: '20px', background: paymentMethod === 'Debit Card' ? '#fafafa' : 'white', border: `2px solid ${paymentMethod === 'Debit Card' ? 'black' : '#eee'}`, borderRadius: '8px', transition: 'all 0.2s' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', fontSize: '1.1rem' }}>
+          {/* DEBIT BLOCK */}
+          <div style={{ padding: '15px', background: paymentMethod === 'Debit Card' ? '#fafafa' : 'white', border: `2px solid ${paymentMethod === 'Debit Card' ? 'black' : '#eee'}`, borderRadius: '8px', transition: 'all 0.2s' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '1.05rem' }}>
               <input 
                 type="radio" 
                 name="paymentMethod" 
                 value="Debit Card" 
                 checked={paymentMethod === 'Debit Card'} 
-                onChange={(e) => { setPaymentMethod(e.target.value); setUseSavedPayment(false); }} 
-                style={{ transform: 'scale(1.5)', cursor: 'pointer' }}
+                onChange={(e) => setPaymentMethod(e.target.value)} 
+                style={{ transform: 'scale(1.4)', cursor: 'pointer', margin: 0 }}
               />
               <strong>Debit Card (PIN Required)</strong>
             </label>
-            <p style={{ marginLeft: '32px', color: '#666', fontSize: '0.9rem', marginTop: '5px', marginBottom: 0 }}>
+            <p style={{ marginLeft: '30px', color: '#666', fontSize: '0.85rem', marginTop: '2px', marginBottom: '8px' }}>
               Subject to a standard $3.00 cashless ATM processing fee.
             </p>
+
+            {linkedDebit && (
+              <div style={{ marginLeft: '30px', padding: '10px', background: '#f5f5f5', borderRadius: '6px', border: '1px solid #ddd' }}>
+                <p style={{ color: '#389e0d', fontSize: '0.85rem', fontWeight: 'bold', margin: '0 0 8px 0' }}>✓ Saved Card: {linkedDebit}</p>
+                
+                {paymentMethod === 'Debit Card' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: 0 }}>
+                      <input type="radio" checked={!useNewDebit} onChange={() => setUseNewDebit(false)} style={{ margin: 0 }} />
+                      Use {linkedDebit}
+                    </label>
+                    <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: 0 }}>
+                      <input type="radio" checked={useNewDebit} onChange={() => setUseNewDebit(true)} style={{ margin: 0 }} />
+                      Link a different debit card
+                    </label>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
+          {/* IN-STORE BLOCK */}
           {isPickup && (
-            <div style={{ padding: '20px', background: paymentMethod === 'Pay In-Store' ? '#fafafa' : 'white', border: `2px solid ${paymentMethod === 'Pay In-Store' ? 'black' : '#eee'}`, borderRadius: '8px', transition: 'all 0.2s' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', fontSize: '1.1rem' }}>
+            <div style={{ padding: '15px', background: paymentMethod === 'Pay In-Store' ? '#fafafa' : 'white', border: `2px solid ${paymentMethod === 'Pay In-Store' ? 'black' : '#eee'}`, borderRadius: '8px', transition: 'all 0.2s' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', fontSize: '1.05rem' }}>
                 <input 
                   type="radio" 
                   name="paymentMethod" 
                   value="Pay In-Store" 
                   checked={paymentMethod === 'Pay In-Store'} 
-                  onChange={(e) => { setPaymentMethod(e.target.value); setUseSavedPayment(false); }} 
-                  style={{ transform: 'scale(1.5)', cursor: 'pointer' }}
+                  onChange={(e) => setPaymentMethod(e.target.value)} 
+                  style={{ transform: 'scale(1.4)', cursor: 'pointer', margin: 0 }}
                 />
                 <strong>Pay In-Store (Cash/Terminal)</strong>
               </label>
-              <p style={{ marginLeft: '32px', color: '#666', fontSize: '0.9rem', marginTop: '5px', marginBottom: 0 }}>
+              <p style={{ marginLeft: '30px', color: '#666', fontSize: '0.85rem', marginTop: '2px', marginBottom: 0 }}>
                 Available for In-Store Pickup reservations only.
               </p>
             </div>
@@ -182,9 +233,9 @@ const PaymentScreen = () => {
 
           <button 
             type="submit" 
-            style={{ width: '100%', padding: '15px', background: 'black', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold', marginTop: '10px', transition: 'background 0.3s' }}
+            style={{ width: '100%', padding: '12px', background: 'black', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '1.05rem', fontWeight: 'bold', marginTop: '5px', transition: 'background 0.3s' }}
           >
-            {useSavedPayment || paymentMethod === 'Pay In-Store' ? 'Continue to Final Review' : `Authorize ${paymentMethod}`}
+            {getButtonText()}
           </button>
         </form>
       </div>
@@ -221,6 +272,13 @@ const PaymentScreen = () => {
                   <input type="password" placeholder="Passcode" value={fakePassword} onChange={(e) => setFakePassword(e.target.value)} style={{ padding: '12px', border: '1px solid #ccc', borderRadius: '4px' }} required />
                   <p style={{ fontSize: '0.8rem', color: '#999', textAlign: 'center', margin: 0 }}>By logging in, you agree to the secure transfer of funds.</p>
                   
+                  <div style={{ background: '#f5f5f5', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#333', cursor: 'pointer', margin: 0 }}>
+                      <input type="checkbox" checked={saveMethodToProfile} onChange={(e) => setSaveMethodToProfile(e.target.checked)} />
+                      Save this bank account to my profile for future use
+                    </label>
+                  </div>
+
                   <button type="submit" disabled={modalStep === 'processing' || modalStep === 'success'} style={{ padding: '15px', background: '#1890ff', color: 'white', border: 'none', borderRadius: '5px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer' }}>
                     Agree & Link Account
                   </button>
@@ -240,6 +298,13 @@ const PaymentScreen = () => {
                   <input type="text" placeholder="Billing Zip Code" maxLength="5" style={{ padding: '12px', border: '1px solid #ccc', borderRadius: '4px' }} required />
                   <p style={{ fontSize: '0.8rem', color: '#999', textAlign: 'center', margin: 0 }}>A standard $3.00 processing fee will be applied to this order.</p>
                   
+                  <div style={{ background: '#f5f5f5', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#333', cursor: 'pointer', margin: 0 }}>
+                      <input type="checkbox" checked={saveMethodToProfile} onChange={(e) => setSaveMethodToProfile(e.target.checked)} />
+                      Save this debit card to my profile for future use
+                    </label>
+                  </div>
+
                   <button type="submit" disabled={modalStep === 'processing' || modalStep === 'success'} style={{ padding: '15px', background: '#1890ff', color: 'white', border: 'none', borderRadius: '5px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer' }}>
                     Authorize Card
                   </button>
@@ -272,4 +337,4 @@ const PaymentScreen = () => {
   );
 };
 
-export default PaymentScreen;
+export default PaymentMethodScreen;
