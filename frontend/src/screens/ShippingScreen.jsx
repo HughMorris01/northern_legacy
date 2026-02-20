@@ -22,7 +22,7 @@ const ShippingScreen = () => {
 
   // Form State
   const [address, setAddress] = useState('');
-  const [aptNumber, setAptNumber] = useState(''); // NEW: Dedicated Apt State
+  const [aptNumber, setAptNumber] = useState(''); 
   const [city, setCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
   const [terrainType, setTerrainType] = useState('Land');
@@ -39,39 +39,7 @@ const ShippingScreen = () => {
   const [message, setMessage] = useState('');
   const autocompleteRef = useRef(null);
 
-  const verifyAddressString = (addressString) => {
-    if (!window.google) return;
-    const geocoder = new window.google.maps.Geocoder();
-    
-    geocoder.geocode({ address: addressString }, (results, geocodeStatus) => {
-      if (geocodeStatus === 'OK' && results[0]) {
-        const lat = results[0].geometry.location.lat();
-        const lng = results[0].geometry.location.lng();
-        
-        const distanceInMeters = window.google.maps.geometry.spherical.computeDistanceBetween(
-          new window.google.maps.LatLng(STORE_COORDS),
-          new window.google.maps.LatLng({ lat, lng })
-        );
-        const distanceInMiles = distanceInMeters / 1609.34;
-        
-        if (distanceInMiles <= 30) {
-          setIsEligible(true);
-          setStatus('success');
-          setMessage(`✓ Profile Address Verified! You are ${distanceInMiles.toFixed(1)} miles away.`);
-        } else {
-          setIsEligible(false);
-          setStatus('out-of-range');
-          setMessage(`✕ Out of range. Your profile address is ${distanceInMiles.toFixed(1)} miles away.`);
-        }
-      } else {
-        console.error('Google Geocoding API Error:', geocodeStatus);
-        setIsEligible(false);
-        setStatus('error');
-        setMessage('Could not automatically verify your profile address. Please uncheck the box and enter it manually.');
-      }
-    });
-  };
-
+  // THE FIX: Only fetch once on mount. Bypass Google Maps entirely for saved addresses!
   useEffect(() => {
     const initAddress = async () => {
       try {
@@ -81,22 +49,22 @@ const ShippingScreen = () => {
           setUseProfileAddress(true);
           
           setAddress(data.address.street);
-          setAptNumber(''); // Clear any residual apt state
+          setAptNumber(''); 
           setCity(data.address.city);
           setPostalCode(data.address.postalCode);
           setTerrainType(data.address.terrainType || 'Land');
           
-          if (isLoaded) {
-             verifyAddressString(`${data.address.street}, ${data.address.city}, NY ${data.address.postalCode}`);
-          }
+          // Instantly approve the address since it was already verified when they saved it!
+          setIsEligible(true);
+          setStatus('success');
+          setMessage('✓ Saved Profile Address Loaded!');
         }
       } catch {
         console.warn('No profile address found.');
       }
     };
     initAddress();
-    // eslint-disable-next-line
-  }, [isLoaded]);
+  }, []); // Removed isLoaded dependency
 
   const handleUseProfileToggle = (e) => {
     const checked = e.target.checked;
@@ -104,11 +72,15 @@ const ShippingScreen = () => {
     
     if (checked && savedProfileAddress) {
       setAddress(savedProfileAddress.street);
-      setAptNumber(''); // Clear apt input when using profile
+      setAptNumber(''); 
       setCity(savedProfileAddress.city);
       setPostalCode(savedProfileAddress.postalCode);
       setTerrainType(savedProfileAddress.terrainType);
-      verifyAddressString(`${savedProfileAddress.street}, ${savedProfileAddress.city}, NY ${savedProfileAddress.postalCode}`);
+      
+      // Instantly approve the address!
+      setIsEligible(true);
+      setStatus('success');
+      setMessage('✓ Saved Profile Address Loaded!');
     } else {
       setAddress('');
       setAptNumber('');
@@ -166,7 +138,7 @@ const ShippingScreen = () => {
         setStatus('success');
         setMessage(`Address verified! You are ${distanceInMiles.toFixed(1)} miles away.`);
         setAddress(newStreet);
-        setAptNumber(''); // Clear the apt input for a fresh search
+        setAptNumber(''); 
         setCity(parsedCity);
         setPostalCode(parsedPostalCode);
         setIsEligible(true);
@@ -186,7 +158,6 @@ const ShippingScreen = () => {
     e.preventDefault();
     if (!isEligible) return; 
 
-    // Dynamically build the final street string based on whether they manually typed an Apt Number
     const finalStreet = (!useProfileAddress && aptNumber) ? `${address}, ${aptNumber}`.trim() : address;
 
     if (!useProfileAddress && saveToProfile) {
@@ -200,13 +171,9 @@ const ShippingScreen = () => {
       }
     }
 
-    // Save the combined street string to the local session for the checkout flow
     saveShippingAddress({ address: finalStreet, city, postalCode, terrainType });
     navigate('/payment');
   };
-
-  if (loadError) return <div style={{ color: 'red', textAlign: 'center', marginTop: '40px' }}>Error loading map script. Check API key.</div>;
-  if (!isLoaded) return <div style={{ textAlign: 'center', marginTop: '40px' }}>Loading Delivery Map...</div>;
 
   return (
     <div style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
@@ -233,34 +200,49 @@ const ShippingScreen = () => {
 
         <form onSubmit={submitHandler} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           
+          {/* THE FIX: Unblocked the rendering! If Google is slow, it gracefully shows a disabled input instead of a blank screen */}
           {!useProfileAddress && (
             <div>
               <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px' }}>Search Address</label>
-              <Autocomplete 
-                onLoad={(autocomplete) => (autocompleteRef.current = autocomplete)}
-                onPlaceChanged={handlePlaceChanged}
-                options={{ 
-                  bounds: searchBounds,
-                  strictBounds: true,
-                  componentRestrictions: { country: ['us', 'ca'] }, 
-                  fields: ['address_components', 'geometry'] 
-                }} 
-              >
+              
+              {loadError ? (
+                <div style={{ color: 'red', fontSize: '0.9rem', marginBottom: '10px' }}>
+                  Error loading map. Please check your connection or use a saved profile address.
+                </div>
+              ) : !isLoaded ? (
                 <input
                   type="text"
-                  value={inputValue}
-                  onChange={(e) => {
-                    setInputValue(e.target.value);
-                    if (status === 'success') {
-                      setStatus(null);
-                      setIsEligible(false);
-                      setMessage('Please select a valid address from the dropdown to continue.');
-                    }
-                  }}
-                  placeholder="Start typing your street address..."
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box', fontSize: '1rem' }}
+                  disabled
+                  placeholder="Loading address search..."
+                  style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box', fontSize: '1rem', background: '#f5f5f5', cursor: 'wait' }}
                 />
-              </Autocomplete>
+              ) : (
+                <Autocomplete 
+                  onLoad={(autocomplete) => (autocompleteRef.current = autocomplete)}
+                  onPlaceChanged={handlePlaceChanged}
+                  options={{ 
+                    bounds: searchBounds,
+                    strictBounds: true,
+                    componentRestrictions: { country: ['us', 'ca'] }, 
+                    fields: ['address_components', 'geometry'] 
+                  }} 
+                >
+                  <input
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => {
+                      setInputValue(e.target.value);
+                      if (status === 'success') {
+                        setStatus(null);
+                        setIsEligible(false);
+                        setMessage('Please select a valid address from the dropdown to continue.');
+                      }
+                    }}
+                    placeholder="Start typing your street address..."
+                    style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box', fontSize: '1rem' }}
+                  />
+                </Autocomplete>
+              )}
             </div>
           )}
 
@@ -280,11 +262,9 @@ const ShippingScreen = () => {
             </div>
           )}
 
-          {/* PARSED DATA BLOCK: Handles Both Scenarios cleanly */}
           {status === 'success' && address && (
             <>
               {useProfileAddress ? (
-                /* READ-ONLY DISPLAY FOR SAVED PROFILE ADDRESSES */
                 <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', border: '1px dashed #ccc' }}>
                   <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px', color: '#666', fontSize: '0.85rem' }}>Saved Delivery Address</label>
                   <input 
@@ -295,7 +275,6 @@ const ShippingScreen = () => {
                   />
                 </div>
               ) : (
-                /* 3-BOX LAYOUT FOR MANUAL ENTRY */
                 <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', background: '#f9f9f9', padding: '15px', borderRadius: '8px', border: '1px dashed #ccc' }}>
                   <div style={{ flex: '2 1 200px' }}>
                     <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px', color: '#666', fontSize: '0.85rem' }}>
