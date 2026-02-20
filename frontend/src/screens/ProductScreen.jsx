@@ -151,7 +151,7 @@ const ProductScreen = () => {
 
           {isCartMaxedOut && !isDbOutOfStock && (
             <span style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#d48806', color: 'white', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
-              Cart Maxed
+              Sold Out!
             </span>
           )}
 

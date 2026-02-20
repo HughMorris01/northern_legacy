@@ -38,7 +38,7 @@ const OrderTypeScreen = () => {
   return (
     <div style={{ maxWidth: '600px', margin: 'auto', padding: '20px' }}>
       <CheckoutSteps step1 step2 />
-      <h1>Order Method</h1>
+      <h1>Order Type</h1>
       <form onSubmit={submitHandler}>
         <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
           
