@@ -2,12 +2,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from '../axios';
 import useAuthStore from '../store/authStore';
+import useCartStore from '../store/cartStore';
 import Loader from '../components/Loader';
 import { toast } from 'react-toastify';
 
 const ProfileDashboardScreen = () => { 
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
+  
+  const cartItems = useCartStore((state) => state.cartItems);
+  const clearCart = useCartStore((state) => state.clearCart);
 
   const [profileData, setProfileData] = useState(null);
   const [orders, setOrders] = useState([]);
@@ -16,11 +20,12 @@ const ProfileDashboardScreen = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
 
-  // Password Change State
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  const [showOrders, setShowOrders] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -43,6 +48,23 @@ const ProfileDashboardScreen = () => {
 
     fetchData();
   }, []);
+
+  const logoutHandler = async () => {
+    try {
+      await axios.put('/api/users/cart', { cartItems });
+    } catch (syncError) {
+      console.warn('Cart sync failed, but proceeding with logout anyway.', syncError);
+    }
+
+    try {
+      await axios.post('/api/users/logout');
+      logout();
+      clearCart();
+      navigate('/login');
+    } catch (error) {
+      console.error('Fatal error during logout sequence', error);
+    }
+  };
 
   const deleteAccountHandler = async () => {
     if (deleteConfirmationText !== 'DELETE') {
@@ -86,57 +108,79 @@ const ProfileDashboardScreen = () => {
 
   const displayFirstName = profileData?.preferredFirstName || profileData?.firstName;
   const displayLastName = profileData?.preferredLastName || profileData?.lastName;
+  const isVerified = profileData?.isVerified;
 
   return (
     <div style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 15px', fontFamily: 'sans-serif', boxSizing: 'border-box', overflowX: 'hidden' }}>
       
-      <div style={{ borderBottom: '2px solid #111', paddingBottom: '10px', marginBottom: '30px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-        <h1 style={{ margin: 0, fontSize: '2rem' }}>
-          {displayFirstName ? `${displayFirstName}'s Dashboard` : 'My Profile'}
-        </h1>
-        <p style={{ margin: 0, color: '#666', fontSize: '1rem' }}>Manage your identity, addresses, and order history.</p>
+      <div style={{ borderBottom: '2px solid #111', paddingBottom: '15px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <h1 style={{ margin: 0, fontSize: '2rem' }}>
+            {displayFirstName ? `${displayFirstName}'s Dashboard` : 'My Profile'}
+          </h1>
+          <p style={{ margin: 0, color: '#666', fontSize: '1rem' }}>Manage your identity, addresses, and order history.</p>
+        </div>
+        
+        <button 
+          onClick={logoutHandler}
+          style={{ background: 'transparent', color: '#cf1322', border: '2px solid #cf1322', padding: '8px 20px', borderRadius: '6px', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold', transition: 'all 0.2s' }}
+          onMouseOver={(e) => { e.currentTarget.style.background = '#cf1322'; e.currentTarget.style.color = 'white'; }}
+          onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#cf1322'; }}
+        >
+          Logout
+        </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '40px' }}>
         
         <div style={{ width: '100%', boxSizing: 'border-box' }}>
-          
-          {/* VERIFICATION BANNER */}
-          <div style={{ background: profileData?.isVerified ? '#f6ffed' : '#fff2f0', border: `1px solid ${profileData?.isVerified ? '#b7eb8f' : '#ffccc7'}`, padding: '20px', borderRadius: '8px', marginBottom: '25px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <p style={{ color: profileData?.isVerified ? '#389e0d' : '#cf1322', fontWeight: 'bold', margin: 0, fontSize: '1.1rem' }}>
-              ID Verification Status: {profileData?.isVerified ? 'Verified 21+' : 'Pending / Not Verified'}
+
+          <div style={{ 
+            background: isVerified ? '#f6ffed' : '#fff2f0', 
+            padding: '20px', 
+            borderRadius: '8px', 
+            border: `1px solid ${isVerified ? '#b7eb8f' : '#ffccc7'}`, 
+            marginBottom: '25px',
+            transition: 'all 0.3s'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${isVerified ? '#b7eb8f' : '#ffccc7'}`, paddingBottom: '10px', marginBottom: '15px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', color: isVerified ? '#237804' : '#cf1322' }}>
+                Legal Identity {isVerified ? '✓ (Verified 21+)' : '⚠️ (Pending Verification)'}
+              </h3>
+            </div>
+
+            <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem', color: isVerified ? '#111' : '#666' }}>
+              <strong>Full Legal Name:</strong> {isVerified ? `${profileData?.firstName} ${profileData?.lastName}` : <span style={{ fontStyle: 'italic' }}>Pending</span>}
             </p>
-            
-            {!profileData?.isVerified && (
-              <div style={{ marginTop: '10px' }}>
-                <p style={{ margin: '0 0 15px 0', color: '#666', fontSize: '0.9rem' }}>
+            <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem', color: isVerified ? '#111' : '#666' }}>
+              <strong>Date of Birth:</strong> {isVerified && profileData?.dateOfBirth !== '1900-01-01' ? profileData.dateOfBirth : <span style={{ fontStyle: 'italic' }}>Pending</span>}
+            </p>
+            <p style={{ margin: 0, fontSize: '1.05rem', color: isVerified ? '#111' : '#666' }}>
+              <strong>ID Expiration Date:</strong> {isVerified && profileData?.idExpirationDate ? profileData.idExpirationDate : <span style={{ fontStyle: 'italic' }}>Pending</span>}
+            </p>
+
+            {!isVerified && (
+              <div style={{ marginBottom: '20px' }}>
+                <p style={{ margin: '40px 0 15px 0', color: '#cf1322', fontSize: '0.95rem', fontWeight: 'bold' }}>
                   State law requires a verified 21+ identity to browse and purchase inventory.
                 </p>
                 <button onClick={() => navigate('/verify')} style={{ padding: '12px 25px', background: '#cf1322', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', width: '100%' }}>
                   Verify Identity Now
                 </button>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '15px', color: '#888', fontSize: '0.8rem', textAlign: 'center', lineHeight: '1.4' }}>
-                  <span>🔒 Identity verification securely vaulted via <strong>Persona</strong>. Encrypted with AES-256 and SOC2 Type II compliance.</span>
-                </div>
+                <p style={{ margin: '10px 0 0 0', color: '#cf1322', fontSize: '0.8rem', textAlign: 'center', lineHeight: '1.4' }}>
+                  🔒 Identity securely vaulted via <strong>Persona</strong>. (AES-256 / SOC2 Compliant)
+                </p>
+              </div>
+            )}
+            {isVerified && (
+              <div>
+                <p style={{ margin: '20px 0 0 0', color: '#237804', fontSize: '0.8rem', textAlign: 'center', lineHeight: '1.4' }}>
+                  🔒 Identity securely vaulted via <strong>Persona</strong>. (AES-256 / SOC2 Compliant)
+                </p>
               </div>
             )}
           </div>
 
-          {/* LEGAL IDENTITY FIELDS (Locked) */}
-          <div style={{ background: '#f5f5f5', padding: '20px', borderRadius: '8px', border: '1px solid #e8e8e8', marginBottom: '25px' }}>
-            <h3 style={{ margin: '0 0 15px 0', fontSize: '1.2rem', color: '#111', borderBottom: '1px solid #ddd', paddingBottom: '10px' }}>Legal Identity</h3>
-            <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem' }}>
-              <strong>Full Legal Name:</strong> {profileData?.isVerified ? `${profileData?.firstName} ${profileData?.lastName}` : <span style={{ color: '#999', fontStyle: 'italic' }}>Pending Verification</span>}
-            </p>
-            <p style={{ margin: '0 0 10px 0', fontSize: '1.05rem' }}>
-              <strong>Date of Birth:</strong> {profileData?.isVerified && profileData?.dateOfBirth !== '1900-01-01' ? profileData.dateOfBirth : <span style={{ color: '#999', fontStyle: 'italic' }}>Pending Verification</span>}
-            </p>
-            <p style={{ margin: 0, fontSize: '1.05rem' }}>
-              <strong>ID Expiration Date:</strong> {profileData?.isVerified && profileData?.idExpirationDate ? profileData.idExpirationDate : <span style={{ color: '#999', fontStyle: 'italic' }}>Pending Verification</span>}
-            </p>
-          </div>
-
-          {/* DELIVERY ADDRESS */}
           <div style={{ border: '1px solid #eaeaea', padding: '20px', borderRadius: '8px', marginBottom: '25px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ddd', paddingBottom: '10px', marginBottom: '15px' }}>
               <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#111' }}>Default Delivery Address</h3>
@@ -156,8 +200,7 @@ const ProfileDashboardScreen = () => {
             )}
           </div>
 
-          {/* SAVED BANK ACCOUNT UI */}
-          <div style={{ border: '1px solid #eaeaea', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <div style={{ border: '1px solid #eaeaea', padding: '20px 15px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ddd', paddingBottom: '10px', marginBottom: '15px' }}>
               <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#111' }}>Saved Payment Methods</h3>
               <button onClick={() => navigate('/profile/bank')} style={{ padding: '6px 15px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>
@@ -183,8 +226,7 @@ const ProfileDashboardScreen = () => {
             </div>
           </div>
 
-          {/* MARKETING & CONTACT INFO FIELDS */}
-          <div style={{ border: '1px solid #eaeaea', padding: '20px', borderRadius: '8px', marginBottom: '25px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <div style={{ border: '1px solid #eaeaea', padding: '20px 20px 20px 15px', borderRadius: '8px', marginBottom: '25px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ddd', paddingBottom: '10px', marginBottom: '15px' }}>
               <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#111' }}>Marketing & Contact Preferences</h3>
               <button onClick={() => navigate('/profile/contact')} style={{ padding: '6px 15px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>
@@ -197,19 +239,20 @@ const ProfileDashboardScreen = () => {
               {profileData?.syncName && <span style={{ fontSize: '0.8rem', color: '#1890ff', marginLeft: '10px', fontWeight: 'bold' }}>(Synced to Legal)</span>}
             </p>
             
-            <div style={{ padding: '10px', background: '#fafafa', borderRadius: '6px', marginBottom: '10px', borderLeft: profileData?.emailOptIn ? '4px solid #1890ff' : '4px solid #ccc' }}>
+            {/* THE FIX: Adjusted padding down to 3px on the left side */}
+            <div style={{ padding: '12px 15px 12px 3px', background: '#fafafa', borderRadius: '6px', marginBottom: '10px', borderLeft: profileData?.emailOptIn ? '3px solid #1890ff' : '4px solid #ccc' }}>
               <p style={{ margin: '0 0 5px 0', fontSize: '1.05rem' }}>
                 <strong>Contact Email:</strong> {profileData?.emailOptIn && profileData?.contactEmail ? profileData.contactEmail : <span style={{ color: '#999', fontStyle: 'italic' }}>Opted Out</span>}
               </p>
             </div>
 
-            <div style={{ padding: '10px', background: '#fafafa', borderRadius: '6px', marginBottom: '10px', borderLeft: profileData?.smsOptIn ? '4px solid #52c41a' : '4px solid #ccc' }}>
+            <div style={{ padding: '12px 15px 12px 3px', background: '#fafafa', borderRadius: '6px', marginBottom: '10px', borderLeft: profileData?.smsOptIn ? '3px solid #52c41a' : '4px solid #ccc' }}>
               <p style={{ margin: '0 0 5px 0', fontSize: '1.05rem' }}>
                 <strong>Mobile Phone:</strong> {profileData?.smsOptIn && profileData?.phoneNumber ? profileData.phoneNumber : <span style={{ color: '#999', fontStyle: 'italic' }}>Opted Out</span>}
               </p>
             </div>
 
-            <div style={{ padding: '10px', background: '#fafafa', borderRadius: '6px', borderLeft: profileData?.mailOptIn ? '4px solid #722ed1' : '4px solid #ccc' }}>
+            <div style={{ padding: '12px 15px 12px 3px', background: '#fafafa', borderRadius: '6px', borderLeft: profileData?.mailOptIn ? '3px solid #722ed1' : '4px solid #ccc' }}>
               <p style={{ margin: 0, fontSize: '1.05rem' }}>
                 <strong>Mailing Address: </strong> 
                 {profileData?.mailOptIn && profileData?.mailingAddress?.street 
@@ -220,7 +263,6 @@ const ProfileDashboardScreen = () => {
             </div>
           </div>
 
-          {/* ACCOUNT & SECURITY SECTION */}
           <div style={{ border: '1px solid #eaeaea', padding: '20px', borderRadius: '8px', marginBottom: '25px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ddd', paddingBottom: '10px', marginBottom: '15px' }}>
               <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#111' }}>Account & Security</h3>
@@ -265,41 +307,92 @@ const ProfileDashboardScreen = () => {
 
         {/* RIGHT COLUMN: Order History */}
         <div style={{ width: '100%', boxSizing: 'border-box' }}>
-          <h2 style={{ borderBottom: '1px solid #eee', paddingBottom: '10px', marginBottom: '20px', fontSize: '1.5rem' }}>Order History</h2>
           
-          {orders.length === 0 ? (
-            <div style={{ background: '#f9f9f9', padding: '30px 20px', borderRadius: '8px', border: '1px dashed #ccc', textAlign: 'center', color: '#666' }}>
-              <p style={{ fontSize: '1.1rem', margin: '0 0 15px 0' }}>You haven't placed any orders yet.</p>
-              <Link to="/" style={{ color: '#1890ff', textDecoration: 'none', fontWeight: 'bold' }}>Start Shopping &rarr;</Link>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              {orders.map((order) => (
-                <div key={order._id} style={{ border: '1px solid #eaeaea', padding: '20px', borderRadius: '8px', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '15px' }}>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#888', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                      {new Date(order.createdAt).toLocaleDateString()}
-                    </span>
-                    <strong style={{ fontSize: '1.1rem' }}>${order.totalAmount.toFixed(2)}</strong>
-                    <span style={{ color: order.status === 'Completed' ? '#28a745' : '#1890ff', fontSize: '0.9rem', fontWeight: 'bold' }}>
-                      {order.status}
-                    </span>
-                  </div>
+          <div 
+            onClick={() => setShowOrders(!showOrders)}
+            style={{ 
+              borderBottom: '1px solid #eee', paddingBottom: '10px', marginBottom: '20px', 
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+              cursor: 'pointer', userSelect: 'none' 
+            }}
+          >
+            <h2 style={{ margin: 0, fontSize: '1.5rem' }}>
+              Order History {orders.length > 0 && `(${orders.length})`}
+            </h2>
+            <span style={{ 
+              fontSize: '1.2rem', color: '#666',
+              transform: showOrders ? 'rotate(180deg)' : 'rotate(0deg)', 
+              transition: 'transform 0.3s ease' 
+            }}>
+              ▼
+            </span>
+          </div>
 
-                  <Link to={`/order/${order._id}`} style={{ padding: '10px 20px', background: '#f5f5f5', color: '#111', textDecoration: 'none', borderRadius: '4px', border: '1px solid #ddd', fontWeight: 'bold', fontSize: '0.9rem', transition: 'background 0.2s' }}>
-                    View Details
-                  </Link>
-
+          {/* THE FIX: Render a faded preview of the first order when the accordion is closed */}
+          {!showOrders && orders.length > 0 && (
+            <div 
+              onClick={() => setShowOrders(true)}
+              style={{ 
+                cursor: 'pointer',
+                opacity: 0.6,
+                WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%)',
+                maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%)',
+                transition: 'opacity 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.opacity = 0.8}
+              onMouseOut={(e) => e.currentTarget.style.opacity = 0.6}
+            >
+              <div style={{ border: '1px solid #eaeaea', padding: '20px', borderRadius: '8px', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '15px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#888', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    {new Date(orders[0].createdAt).toLocaleDateString()}
+                  </span>
+                  <strong style={{ fontSize: '1.1rem' }}>${orders[0].totalAmount.toFixed(2)}</strong>
+                  <span style={{ color: orders[0].status === 'Completed' ? '#28a745' : '#1890ff', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                    {orders[0].status}
+                  </span>
                 </div>
-              ))}
+                <div style={{ padding: '10px 20px', background: '#f5f5f5', color: '#111', borderRadius: '4px', border: '1px solid #ddd', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                  View Details
+                </div>
+              </div>
             </div>
+          )}
+          
+          {showOrders && (
+            orders.length === 0 ? (
+              <div style={{ background: '#f9f9f9', padding: '30px 20px', borderRadius: '8px', border: '1px dashed #ccc', textAlign: 'center', color: '#666' }}>
+                <p style={{ fontSize: '1.1rem', margin: '0 0 15px 0' }}>You haven't placed any orders yet.</p>
+                <Link to="/" style={{ color: '#1890ff', textDecoration: 'none', fontWeight: 'bold' }}>Start Shopping &rarr;</Link>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                {orders.map((order) => (
+                  <div key={order._id} style={{ border: '1px solid #eaeaea', padding: '20px', borderRadius: '8px', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '15px' }}>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#888', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </span>
+                      <strong style={{ fontSize: '1.1rem' }}>${order.totalAmount.toFixed(2)}</strong>
+                      <span style={{ color: order.status === 'Completed' ? '#28a745' : '#1890ff', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                        {order.status}
+                      </span>
+                    </div>
+
+                    <Link to={`/order/${order._id}`} style={{ padding: '10px 20px', background: '#f5f5f5', color: '#111', textDecoration: 'none', borderRadius: '4px', border: '1px solid #ddd', fontWeight: 'bold', fontSize: '0.9rem', transition: 'background 0.2s' }}>
+                      View Details
+                    </Link>
+
+                  </div>
+                ))}
+              </div>
+            )
           )}
         </div>
 
       </div>
 
-      {/* DANGER ZONE */}
       <div style={{ marginTop: '60px', paddingTop: '30px', borderTop: '2px solid #ff4d4f', width: '100%' }}>
         <h3 style={{ color: '#ff4d4f', marginBottom: '10px', fontSize: '1.3rem' }}>Danger Zone</h3>
         <p style={{ color: '#666', marginBottom: '20px' }}>Once you delete your account, there is no going back. Please be certain.</p>
@@ -308,7 +401,6 @@ const ProfileDashboardScreen = () => {
         </button>
       </div>
 
-      {/* GITHUB-STYLE DELETE MODAL */}
       {showDeleteModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <div style={{ background: 'white', padding: '30px', borderRadius: '12px', width: '450px', maxWidth: '90%', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>

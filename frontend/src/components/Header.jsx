@@ -1,34 +1,11 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
-import axios from '../axios'; 
 
 const Header = () => {
-  const navigate = useNavigate();
-
   const cartItems = useCartStore((state) => state.cartItems);
   const totalItems = cartItems.reduce((acc, item) => acc + item.qty, 0);
-  const clearCart = useCartStore((state) => state.clearCart);
-
   const userInfo = useAuthStore((state) => state.userInfo);
-  const logout = useAuthStore((state) => state.logout);
-
-  const logoutHandler = async () => {
-    try {
-      await axios.put('/api/users/cart', { cartItems });
-    } catch (syncError) {
-      console.warn('Cart sync failed, but proceeding with logout anyway.', syncError);
-    }
-
-    try {
-      await axios.post('/api/users/logout');
-      logout();
-      clearCart();
-      navigate('/login');
-    } catch (error) {
-      console.error('Fatal error during logout sequence', error);
-    }
-  };
 
   // Dynamically prioritize the preferred name for the greeting
   const greetingName = userInfo?.preferredFirstName || userInfo?.firstName;
@@ -68,24 +45,14 @@ const Header = () => {
         </Link>
 
         {userInfo ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <Link 
-              to="/profile" 
-              style={{ color: 'white', textDecoration: 'none', fontSize: '0.95rem', transition: 'color 0.2s' }}
-              onMouseOver={(e) => e.currentTarget.style.color = '#1890ff'}
-              onMouseOut={(e) => e.currentTarget.style.color = 'white'}
-            >
-              👤 <strong>{greetingName}</strong>
-            </Link>
-            <button 
-              onClick={logoutHandler}
-              style={{ background: 'transparent', color: '#ff4d4f', border: '1px solid #ff4d4f', padding: '6px 12px', borderRadius: '5px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', transition: 'all 0.2s' }}
-              onMouseOver={(e) => { e.currentTarget.style.background = '#ff4d4f'; e.currentTarget.style.color = 'white'; }}
-              onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#ff4d4f'; }}
-            >
-              Logout
-            </button>
-          </div>
+          <Link 
+            to="/profile" 
+            style={{ color: 'white', textDecoration: 'none', fontSize: '0.95rem', transition: 'color 0.2s', marginLeft: '10px' }}
+            onMouseOver={(e) => e.currentTarget.style.color = '#1890ff'}
+            onMouseOut={(e) => e.currentTarget.style.color = 'white'}
+          >
+            👤 <strong>{greetingName}</strong>
+          </Link>
         ) : (
           <Link 
             to="/login" 

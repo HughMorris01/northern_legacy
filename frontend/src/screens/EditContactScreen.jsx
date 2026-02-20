@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from '../axios';
 import Loader from '../components/Loader';
 import { toast } from 'react-toastify';
-import useAuthStore from '../store/authStore'
+import useAuthStore from '../store/authStore';
 
 const EditContactScreen = () => {
   const navigate = useNavigate();
@@ -38,6 +38,16 @@ const EditContactScreen = () => {
 
   const updateUserInfo = useAuthStore((state) => state.updateUserInfo);
 
+  // THE FIX 1: Auto-formatter for US/Canada 10-digit numbers
+  const formatPhoneNumber = (value) => {
+    if (!value) return value;
+    const digits = value.replace(/[^\d]/g, '');
+    const len = digits.length;
+    if (len < 4) return digits;
+    if (len < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+  };
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -57,7 +67,8 @@ const EditContactScreen = () => {
         setSyncEmail(data.syncEmail || false);
 
         setSmsOptIn(data.smsOptIn || false);
-        setPhoneNumber(data.phoneNumber || '');
+        // Format the database number on load
+        setPhoneNumber(formatPhoneNumber(data.phoneNumber || ''));
         
         setMailOptIn(data.mailOptIn || false);
         if (data.mailingAddress) {
@@ -96,7 +107,7 @@ const EditContactScreen = () => {
         syncEmail: emailOptIn ? syncEmail : false,
         
         smsOptIn,
-        phoneNumber,
+        phoneNumber, // Saves the beautifully formatted (XXX) XXX-XXXX string
         
         mailOptIn,
         mailingAddress: { street, city, postalCode },
@@ -119,7 +130,17 @@ const EditContactScreen = () => {
   return (
     <div style={{ maxWidth: '800px', margin: '40px auto', padding: '0 15px', fontFamily: 'sans-serif' }}>
       
-      <Link to="/profile" style={{ display: 'inline-block', marginBottom: '20px', textDecoration: 'none', color: '#1890ff', fontWeight: 'bold' }}>
+      {/* THE FIX 3: Back to Profile Pill Button */}
+      <Link 
+        to="/profile" 
+        style={{ 
+          display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', 
+          background: '#f5f5f5', color: '#333', textDecoration: 'none', borderRadius: '20px', 
+          fontWeight: 'bold', marginBottom: '20px', border: '1px solid #ddd', transition: 'all 0.2s' 
+        }}
+        onMouseOver={(e) => e.currentTarget.style.background = '#e8e8e8'}
+        onMouseOut={(e) => e.currentTarget.style.background = '#f5f5f5'}
+      >
         &larr; Back to Profile
       </Link>
 
@@ -162,7 +183,8 @@ const EditContactScreen = () => {
                 <label htmlFor="emailOptIn" style={{ fontWeight: 'bold', fontSize: '1.05rem', cursor: 'pointer' }}>I consent to receive marketing emails.</label>
               </div>
 
-              <div style={{ marginLeft: '30px', padding: '15px', borderLeft: '3px solid #1890ff', background: '#fafafa', opacity: emailOptIn ? 1 : 0.4, pointerEvents: emailOptIn ? 'auto' : 'none', transition: 'all 0.3s' }}>
+              {/* THE FIX 2: Swapped hardcoded px margins for responsive CSS clamp() functions! */}
+              <div style={{ marginLeft: 'clamp(10px, 4vw, 30px)', padding: 'clamp(12px, 4vw, 15px)', borderLeft: '3px solid #1890ff', background: '#fafafa', opacity: emailOptIn ? 1 : 0.4, pointerEvents: emailOptIn ? 'auto' : 'none', transition: 'all 0.3s' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
                   <input type="checkbox" id="syncEmailCheck" checked={syncEmail} onChange={(e) => setSyncEmail(e.target.checked)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
                   <label htmlFor="syncEmailCheck" style={{ color: '#096dd9', fontWeight: 'bold', cursor: 'pointer' }}>Use my secure Login Email address ({loginEmail})</label>
@@ -186,13 +208,15 @@ const EditContactScreen = () => {
                 <label htmlFor="smsOptIn" style={{ fontWeight: 'bold', fontSize: '1.05rem', cursor: 'pointer' }}>I consent to receive SMS marketing messages.</label>
               </div>
 
-              <div style={{ marginLeft: '30px', padding: '15px', borderLeft: '3px solid #52c41a', background: '#fafafa', opacity: smsOptIn ? 1 : 0.4, pointerEvents: smsOptIn ? 'auto' : 'none', transition: 'all 0.3s' }}>
+              <div style={{ marginLeft: 'clamp(10px, 4vw, 30px)', padding: 'clamp(12px, 4vw, 15px)', borderLeft: '3px solid #52c41a', background: '#fafafa', opacity: smsOptIn ? 1 : 0.4, pointerEvents: smsOptIn ? 'auto' : 'none', transition: 'all 0.3s' }}>
                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px', color: '#333' }}>Mobile Phone Number</label>
                 <input 
                   type="tel" 
                   value={phoneNumber} 
-                  onChange={(e) => setPhoneNumber(e.target.value)} 
+                  onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))} 
                   placeholder="(555) 123-4567"
+                  minLength={14} // Enforces the full 10-digit string with brackets and dashes
+                  maxLength={14}
                   style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '6px', boxSizing: 'border-box' }} 
                   required={smsOptIn}
                 />
@@ -212,7 +236,6 @@ const EditContactScreen = () => {
                 onChange={(e) => {
                   const isChecked = e.target.checked;
                   setMailOptIn(isChecked);
-                  // THE FIX: Unchecking the consent clears everything back to a clean slate
                   if (!isChecked) {
                     setSyncAddresses(false);
                     setStreet('');
@@ -225,7 +248,7 @@ const EditContactScreen = () => {
               <label htmlFor="mailOptIn" style={{ fontWeight: 'bold', fontSize: '1.05rem', cursor: 'pointer' }}>I consent to receive physical mail and catalogs.</label>
             </div>
 
-            <div style={{ marginLeft: '30px', padding: '15px', borderLeft: '3px solid #722ed1', background: '#fafafa', opacity: mailOptIn ? 1 : 0.4, pointerEvents: mailOptIn ? 'auto' : 'none', transition: 'all 0.3s' }}>
+            <div style={{ marginLeft: 'clamp(10px, 4vw, 30px)', padding: 'clamp(12px, 4vw, 15px)', borderLeft: '3px solid #722ed1', background: '#fafafa', opacity: mailOptIn ? 1 : 0.4, pointerEvents: mailOptIn ? 'auto' : 'none', transition: 'all 0.3s' }}>
               
               <div style={{ padding: '12px', background: isWater ? '#f5f5f5' : '#f9f0ff', border: `1px solid ${isWater ? '#ddd' : '#d3adf7'}`, borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
                 <input 
