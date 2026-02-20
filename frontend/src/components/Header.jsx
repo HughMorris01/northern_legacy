@@ -26,7 +26,7 @@ const Header = () => {
       </Link>
       
       <nav style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-        
+
         <Link 
           to="/cart" 
           style={{ color: 'white', textDecoration: 'none', fontSize: '1rem', position: 'relative', marginRight: '5px', transition: 'color 0.2s' }}

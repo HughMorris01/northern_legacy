@@ -2,40 +2,47 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const users = require('./data/users');
 const products = require('./data/products');
+// const orders = require('./data/orders'); // Uncomment this when you create your dummy orders file
+
 const User = require('./models/User');
 const Product = require('./models/Product');
 const Order = require('./models/Order');
 
-// The seeder runs completely independent of your server, 
-// so it needs to load the .env variables manually to find the database
+// Load environment variables manually
 dotenv.config();
 
 mongoose.connect(process.env.MONGO_URI);
 
-const importData = async () => {
+const importData = async (type = 'all') => {
   try {
-    // Wipe the orders and products
-    await Order.deleteMany();
-    await Product.deleteMany();
-
-    // Obliterate the Users collection AND its broken ghost indexes
-    try {
-      await User.collection.drop();
-      console.log('Old user indexes destroyed.');
-    } catch (error) {
-      // It's perfectly fine if the collection doesn't exist yet
+    // --- 1. ORDERS ---
+    if (type === 'all' || type === 'orders') {
+      await Order.deleteMany();
+      // await Order.insertMany(orders); // Uncomment when ready
+      console.log('✅ Orders collection reset.');
     }
 
-    // Force Mongoose to read your User.js file and build the new, correct 'sparse' indexes
-    await User.createIndexes();
+    // --- 2. PRODUCTS ---
+    if (type === 'all' || type === 'products') {
+      await Product.deleteMany();
+      await Product.insertMany(products);
+      console.log('✅ Products collection seeded with fresh catalog.');
+    }
 
-    // 4. Insert the dummy users
-    await User.insertMany(users);
-    
-    // 5. Insert the dummy products
-    await Product.insertMany(products);
+    // --- 3. USERS ---
+    if (type === 'all' || type === 'users') {
+      try {
+        await User.collection.drop();
+        console.log('Old user indexes destroyed.');
+      } catch (error) {
+        // Safe to ignore if the collection doesn't exist
+      }
+      await User.createIndexes();
+      await User.insertMany(users);
+      console.log('✅ Users collection seeded.');
+    }
 
-    console.log('✅ Northern Legacy Database Seeded!');
+    console.log(`🎉 Database Seeding (${type.toUpperCase()}) Complete!`);
     process.exit();
   } catch (error) {
     console.error(`❌ Error: ${error.message}`);
@@ -49,7 +56,7 @@ const destroyData = async () => {
     await Product.deleteMany();
     await User.deleteMany();
 
-    console.log('🗑️ Database Destroyed!');
+    console.log('🗑️ Entire Database Destroyed!');
     process.exit();
   } catch (error) {
     console.error(`❌ Error: ${error.message}`);
@@ -57,9 +64,17 @@ const destroyData = async () => {
   }
 };
 
-// Check what command was passed in the terminal (e.g., node seeder.js -d)
-if (process.argv[2] === '-d') {
+// --- TERMINAL COMMAND ROUTER ---
+const arg = process.argv[2];
+
+if (arg === '-d') {
   destroyData();
+} else if (arg === '-p') {
+  importData('products');
+} else if (arg === '-u') {
+  importData('users');
+} else if (arg === '-o') {
+  importData('orders');
 } else {
-  importData();
+  importData('all'); // Catch-all default
 }

@@ -61,6 +61,15 @@ const productSchema = new mongoose.Schema({
   concentrateGrams: {
     type: Number,
     default: 0 
+  },
+  // --- MARKETING & SALES ---
+  isLimitedRelease: {
+    type: Boolean,
+    default: false // THE FIX: Added this so Mongoose stops stripping it!
+  },
+  isOnSpecial: {
+    type: Boolean,
+    default: false // NEW: Admin flag for the scrolling ticker
   }
 }, {
   timestamps: true

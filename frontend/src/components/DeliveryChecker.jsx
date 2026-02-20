@@ -7,10 +7,8 @@ import { toast } from 'react-toastify';
 
 const libraries = ['places', 'geometry'];
 
-// Store Address: 42901 NY-12, Suite B, Alexandria Bay, NY 13607
 const STORE_COORDS = { lat: 44.3168, lng: -75.9452 };
 
-// Expanded Bounding Box (~350 miles to cover NYC and Southern Ontario)
 const searchBounds = {
   north: 49.5,
   south: 39.0,
@@ -45,7 +43,6 @@ const DeliveryChecker = () => {
         return;
       }
 
-      // 1. Extract the coordinates for distance math
       const customerCoords = {
         lat: place.geometry.location.lat(),
         lng: place.geometry.location.lng(),
@@ -57,7 +54,6 @@ const DeliveryChecker = () => {
       );
       const distanceInMiles = distanceInMeters / 1609.34;
 
-      // 2. Parse the address components
       let streetNumber = '';
       let route = '';
       let city = '';
@@ -80,7 +76,6 @@ const DeliveryChecker = () => {
         terrainType: 'Land' 
       });
 
-      // 3. Set the dynamic messaging
       if (distanceInMiles <= 30) {
         setStatus('success');
         setMessage(`Great news! You are ${distanceInMiles.toFixed(1)} miles away. We deliver to your location.`);
@@ -118,9 +113,10 @@ const DeliveryChecker = () => {
   if (!isLoaded) return <div>Loading address checker...</div>;
 
   return (
-    <div style={{ background: '#f5f5f5', padding: '20px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '20px', textAlign: 'center' }}>
-      <h3 style={{ margin: '0 0 10px 0' }}>Check Delivery Eligibility</h3>
-      <p style={{ margin: '0 0 15px 0', fontSize: '0.9rem', color: '#666' }}>Enter your address to see if you are within our delivery zone.</p>
+    // THE FIX: Aggressively condensed padding and margins (40% height reduction)
+    <div style={{ background: '#f5f5f5', padding: '12px 15px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '15px', textAlign: 'center' }}>
+      <h3 style={{ margin: '0 0 4px 0', fontSize: '1.1rem' }}>Check Delivery Eligibility</h3>
+      <p style={{ margin: '0 0 10px 0', fontSize: '0.70rem', color: '#666' }}>Enter your address to see if you are within our delivery zone.</p>
       
       <Autocomplete 
         onLoad={(autocomplete) => (autocompleteRef.current = autocomplete)}
@@ -135,35 +131,34 @@ const DeliveryChecker = () => {
         <input
           type="text"
           placeholder="Start typing your address..."
-          style={{ width: '100%', maxWidth: '400px', padding: '12px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box', fontSize: '1rem' }}
+          style={{ width: '100%', maxWidth: '400px', padding: '8px 12px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box', fontSize: '0.95rem' }}
         />
       </Autocomplete>
 
-      {/* Dynamic Status Messages */}
+      {/* THE FIX: Shrunk message padding and fonts */}
       {status === 'success' && (
-        <div style={{ marginTop: '15px', color: '#389e0d', fontWeight: 'bold', background: '#f6ffed', padding: '10px', borderRadius: '4px', border: '1px solid #b7eb8f' }}>
+        <div style={{ marginTop: '10px', color: '#389e0d', fontWeight: 'bold', background: '#f6ffed', padding: '8px', borderRadius: '4px', border: '1px solid #b7eb8f', fontSize: '0.9rem' }}>
           ✓ {message}
         </div>
       )}
       {status === 'out-of-range' && (
-        <div style={{ marginTop: '15px', color: '#cf1322', fontWeight: 'bold', background: '#fff2f0', padding: '10px', borderRadius: '4px', border: '1px solid #ffccc7', lineHeight: '1.4' }}>
+        <div style={{ marginTop: '10px', color: '#cf1322', fontWeight: 'bold', background: '#fff2f0', padding: '8px', borderRadius: '4px', border: '1px solid #ffccc7', lineHeight: '1.3', fontSize: '0.9rem' }}>
           {message.includes('Canada') ? '🍁' : '🚁'} {message}
         </div>
       )}
       {status === 'error' && (
-        <div style={{ marginTop: '15px', color: '#d48806', fontWeight: 'bold', background: '#fffbe6', padding: '10px', borderRadius: '4px', border: '1px solid #ffe58f' }}>
+        <div style={{ marginTop: '10px', color: '#d48806', fontWeight: 'bold', background: '#fffbe6', padding: '8px', borderRadius: '4px', border: '1px solid #ffe58f', fontSize: '0.9rem' }}>
           ⚠️ {message}
         </div>
       )}
 
-      {/* THE FIX: Save Address Button logic updated */}
       {parsedAddress && status === 'success' && (
         <button 
           onClick={saveAddressHandler}
           disabled={saving}
           style={{ 
-            marginTop: '15px', padding: '10px 20px', background: 'black', color: 'white', 
-            border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: saving ? 'not-allowed' : 'pointer' 
+            marginTop: '10px', padding: '8px 16px', background: 'black', color: 'white', 
+            border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9rem', cursor: saving ? 'not-allowed' : 'pointer' 
           }}
         >
           {saving ? 'Saving...' : (!userInfo ? 'Login / Create an Account Now' : 'Save this Address to my Profile')}

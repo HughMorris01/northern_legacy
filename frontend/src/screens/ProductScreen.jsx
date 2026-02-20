@@ -7,6 +7,34 @@ import Loader from '../components/Loader';
 import { toast } from 'react-toastify';
 import '../styles/ProductScreen.css'; 
 
+const CONCENTRATE_CATEGORIES = ['Concentrate', 'Vape', 'Edible', 'Tincture'];
+
+const getConcentrateGrams = (item) => {
+  if (item.concentrateGrams) return item.concentrateGrams;
+  if (item.weightInOunces > 0) return Number((item.weightInOunces * 28.3495).toFixed(2));
+  if (item.category === 'Edible' || item.category === 'Tincture') return 1.0; 
+  return 0;
+};
+
+const getFractionalDisplay = (item) => {
+  if (CONCENTRATE_CATEGORIES.includes(item.category)) {
+    const grams = getConcentrateGrams(item);
+    if (grams === 0) return '';
+    if (Math.abs(grams - 1.0) < 0.05) return '1g eq.';
+    if (Math.abs(grams - 0.5) < 0.05) return '0.5g eq.';
+    if (Math.abs(grams - 1.75) < 0.05) return '1.75g eq.';
+    return `${grams}g eq.`;
+  }
+
+  const decimalOz = item.weightInOunces;
+  if (!decimalOz || decimalOz === 0) return '';
+  if (Math.abs(decimalOz - 0.125) < 0.001) return '1/8 oz';
+  if (Math.abs(decimalOz - 0.25) < 0.001) return '1/4 oz';
+  if (Math.abs(decimalOz - 0.5) < 0.001) return '1/2 oz';
+  if (Math.abs(decimalOz - 1.0) < 0.001) return '1 oz';
+  return `${decimalOz.toFixed(3)} oz`;
+};
+
 const ProductScreen = () => {
   const { id } = useParams();
   const [product, setProduct] = useState({});
@@ -71,8 +99,6 @@ const ProductScreen = () => {
   const isDbOutOfStock = product.stockQuantity === 0;
   const isCartMaxedOut = product.stockQuantity > 0 && availableStock === 0;
   const isVisualGrayOut = isDbOutOfStock || isCartMaxedOut; 
-  
-  // THE FIX: isLowStock now reads from the dynamically calculated availableStock
   const isLowStock = availableStock > 0 && availableStock <= 5;
 
   return (
@@ -100,15 +126,16 @@ const ProductScreen = () => {
           {isDbOutOfStock && <span className="badge badge-out">Out of Stock</span>}
           {isCartMaxedOut && <span className="badge badge-maxed">Cart Maxed</span>}
           
-          {/* THE FIX: Inject availableStock into the text string! */}
           {isLowStock && !isDbOutOfStock && !isCartMaxedOut && (
             <span className="badge badge-low">Almost Gone! ({availableStock} left)</span>
           )}
 
+          {/* THE FIX: Moved the comment outside of the actual img tag! */}
           <img 
             src={product.image || '/assets/placeholder.jpg'} 
             alt={product.name} 
             className={`product-image ${isVisualGrayOut ? 'gray-out' : ''}`}
+            style={{ width: '100%', maxHeight: '35vh', objectFit: 'cover', borderRadius: '8px' }}
           />
         </div>
 
@@ -139,16 +166,17 @@ const ProductScreen = () => {
                 <span style={{ color: '#666', fontSize: '0.75rem', display: 'block' }}>THC Content</span>
                 <strong style={{ fontSize: '0.9rem' }}>{product.thcContent}%</strong>
               </div>
-              {product.weightInOunces > 0 && (
+              
+              {getFractionalDisplay(product) && (
                 <div>
-                  <span style={{ color: '#666', fontSize: '0.75rem', display: 'block' }}>Weight</span>
-                  <strong style={{ fontSize: '0.9rem' }}>{product.weightInOunces} oz</strong>
+                  <span style={{ color: '#666', fontSize: '0.75rem', display: 'block' }}>Weight / Eq.</span>
+                  <strong style={{ fontSize: '0.9rem' }}>{getFractionalDisplay(product)}</strong>
                 </div>
               )}
             </div>
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px', minHeight: '96px' }}>
             {isDbOutOfStock ? (
               <div style={{ padding: '10px', background: '#f5f5f5', border: '2px dashed #ccc', borderRadius: '8px', textAlign: 'center' }}>
                 <p style={{ color: '#666', fontWeight: 'bold', margin: 0, fontSize: '0.9rem' }}>Temporarily out of stock!</p>
@@ -171,7 +199,7 @@ const ProductScreen = () => {
                 
                 <button 
                   onClick={addToCartHandler}
-                  style={{ flex: '3 1 150px', padding: '10px 15px', background: 'black', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '1.05rem', fontWeight: 'bold', alignSelf: 'flex-end', transition: 'background 0.2s' }}
+                  style={{ flex: '3 1 150px', padding: '10px 15px', background: 'black', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '1.05rem', fontWeight: 'bold', alignSelf: 'flex-end', transition: 'background 0.2s', height: '42px' }}
                   onMouseOver={(e) => e.currentTarget.style.background = '#333'}
                   onMouseOut={(e) => e.currentTarget.style.background = 'black'}
                 >
@@ -193,7 +221,7 @@ const ProductScreen = () => {
                   display: 'block', width: '100%', textAlign: 'center', padding: '10px', 
                   background: '#1890ff', color: 'white', textDecoration: 'none', 
                   borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', 
-                  transition: 'background 0.2s', boxSizing: 'border-box'
+                  transition: 'background 0.2s', boxSizing: 'border-box', height: '42px'
                 }}
                 onMouseOver={(e) => e.currentTarget.style.background = '#096dd9'}
                 onMouseOut={(e) => e.currentTarget.style.background = '#1890ff'}
