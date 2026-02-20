@@ -292,12 +292,15 @@ const updateUserProfile = async (req, res) => {
 
       // Address Updates
       if (req.body.syncAddresses !== undefined) user.syncAddresses = req.body.syncAddresses;
+      // Inside backend/controllers/userController.js -> updateUserProfile
       if (req.body.address) {
         user.address = {
-          street: req.body.address.street || user.address?.street || '',
-          city: req.body.address.city || user.address?.city || '',
-          postalCode: req.body.address.postalCode || user.address?.postalCode || '',
-          terrainType: req.body.address.terrainType || user.address?.terrainType || 'Land',
+          street: req.body.address.street || user.address.street,
+          city: req.body.address.city || user.address.city,
+          postalCode: req.body.address.postalCode || user.address.postalCode,
+          terrainType: req.body.address.terrainType || user.address.terrainType,
+          lat: req.body.address.lat || user.address.lat, // NEW
+          lng: req.body.address.lng || user.address.lng, // NEW
         };
       }
       if (req.body.mailingAddress) {

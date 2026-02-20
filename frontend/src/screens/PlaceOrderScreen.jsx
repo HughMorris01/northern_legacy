@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useCartStore from '../store/cartStore';
-import useAuthStore from '../store/authStore'; // Added to grab the user's name
+import useAuthStore from '../store/authStore'; 
 import CheckoutSteps from '../components/CheckoutSteps';
 import { TAX_RATES } from '../utils/constants'; 
 import axios from '../axios'; 
@@ -10,7 +10,7 @@ import { toast } from 'react-toastify';
 const PlaceOrderScreen = () => {
   const navigate = useNavigate();
 
-  const userInfo = useAuthStore((state) => state.userInfo); // Pull user details
+  const userInfo = useAuthStore((state) => state.userInfo); 
   const cartItems = useCartStore((state) => state.cartItems);
   const shippingAddress = useCartStore((state) => state.shippingAddress);
   const paymentMethod = useCartStore((state) => state.paymentMethod);
@@ -22,13 +22,6 @@ const PlaceOrderScreen = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [inventoryIssue, setInventoryIssue] = useState(null); 
-
-  // Modal State Machine
-  const [showModal, setShowModal] = useState(false);
-  const [modalStep, setModalStep] = useState('select-bank'); 
-  const [selectedBank, setSelectedBank] = useState('');
-  const [fakeUsername, setFakeUsername] = useState('');
-  const [fakePassword, setFakePassword] = useState('');
 
   useEffect(() => {
     if (cartItems.length === 0) return;
@@ -46,25 +39,16 @@ const PlaceOrderScreen = () => {
   const exciseTax = itemsPrice * TAX_RATES.EXCISE; 
   const localTax = itemsPrice * TAX_RATES.LOCAL;  
   const stateTax = itemsPrice * TAX_RATES.STATE;  
-  const totalPrice = itemsPrice + exciseTax + localTax + stateTax;
+  
+  // Conditionally apply the Debit Fee
+  const debitFee = paymentMethod === 'Debit Card' ? 3.00 : 0;
+  const totalPrice = itemsPrice + exciseTax + localTax + stateTax + debitFee;
 
-  // Dynamic UI variables
   const isPickup = shippingAddress.address === 'In-Store Pickup';
   let orderTypeDisplay = 'Delivery';
   if (isPickup) orderTypeDisplay = 'Pick-Up';
   else if (shippingAddress.terrainType === 'Water') orderTypeDisplay = 'Water Delivery';
   else if (shippingAddress.terrainType === 'Land') orderTypeDisplay = 'Land Delivery';
-
-  const triggerOrderHandler = () => {
-    if (paymentMethod === 'Aeropay (ACH)') {
-      setModalStep('select-bank'); 
-      setFakeUsername('');
-      setFakePassword('');
-      setShowModal(true);
-    } else {
-      executeFinalOrder();
-    }
-  };
 
   const executeFinalOrder = async () => {
     try {
@@ -109,26 +93,6 @@ const PlaceOrderScreen = () => {
     }
   };
 
-  const handleBankSelect = (bankName) => {
-    setSelectedBank(bankName);
-    setModalStep('login');
-  };
-
-  const handleBankLogin = (e) => {
-    e.preventDefault();
-    if (modalStep === 'processing' || modalStep === 'success') return; 
-    
-    setModalStep('processing');
-    
-    setTimeout(() => {
-      setModalStep('success');
-      setTimeout(() => {
-        setShowModal(false);
-        executeFinalOrder(); 
-      }, 1500);
-    }, 2000);
-  };
-
   return (
     <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '20px', fontFamily: 'sans-serif' }}>
       <CheckoutSteps step1 step2 step3 step4 step5 />
@@ -154,9 +118,10 @@ const PlaceOrderScreen = () => {
               }
             </p>
             
-            {!isPickup && (
+            {/* THE FIX: Dynamically display the chosen scheduling window! */}
+            {!isPickup && shippingAddress.deliveryDate && (
               <p style={{ margin: '5px 0', color: '#1890ff', fontWeight: 'bold' }}>
-                <strong>Delivery Window: </strong> Afternoon (12:00 PM - 4:00 PM)
+                <strong>Delivery Window: </strong> {shippingAddress.deliveryTimeSlot} on {shippingAddress.deliveryDate}
               </p>
             )}
           </div>
@@ -226,13 +191,23 @@ const PlaceOrderScreen = () => {
               <span>State Sales Tax ({(TAX_RATES.STATE * 100).toFixed(0)}%):</span>
               <span>${addDecimals(stateTax)}</span>
             </div>
+
+            {/* THE FIX: Conditionally render the Debit Convenience Fee! */}
+            {debitFee > 0 && (
+               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#666' }}>
+                <span>Debit Processing Fee:</span>
+                <span>${addDecimals(debitFee)}</span>
+              </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #ddd', paddingTop: '15px', fontWeight: 'bold', fontSize: '1.2rem' }}>
               <span>Total:</span>
               <span>${addDecimals(totalPrice)}</span>
             </div>
 
+            {/* THE FIX: Button simplified now that payment logic was cleanly moved to the PaymentScreen */}
             <button 
-              onClick={triggerOrderHandler}
+              onClick={executeFinalOrder}
               disabled={cartItems.length === 0 || loading || inventoryIssue}
               style={{ 
                 width: '100%', padding: '15px', marginTop: '10px', 
@@ -242,81 +217,12 @@ const PlaceOrderScreen = () => {
                 fontSize: '1.1rem', fontWeight: 'bold', transition: 'background 0.3s'
               }}
             >
-              {loading ? 'Processing...' : (paymentMethod === 'Aeropay (ACH)' ? 'Link Bank & Place Order' : 'Place Order')}
+              {loading ? 'Processing...' : 'Place Order'}
             </button>
           </div>
         </div>
 
       </div>
-
-      {/* MOCK AEROPAY MODAL */}
-      {showModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div style={{ background: 'white', padding: '30px', borderRadius: '12px', width: '400px', maxWidth: '90%', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', position: 'relative' }}>
-            
-            {modalStep !== 'processing' && modalStep !== 'success' && (
-              <button onClick={() => setShowModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#999' }}>×</button>
-            )}
-
-            {modalStep === 'select-bank' && (
-              <div>
-                <h3 style={{ textAlign: 'center', marginBottom: '5px', color: '#1890ff' }}>Secure Bank Link</h3>
-                <p style={{ textAlign: 'center', color: '#666', fontSize: '0.9rem', marginBottom: '20px' }}>Select your institution to pay securely via Aeropay.</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {['Chase', 'Bank of America', 'Wells Fargo', 'Capital One'].map((bank) => (
-                    <button key={bank} onClick={() => handleBankSelect(bank)} style={{ padding: '15px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', textAlign: 'left', transition: 'background 0.2s' }}>
-                      🏦 {bank}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {modalStep === 'login' && (
-              <div>
-                <button onClick={() => setModalStep('select-bank')} style={{ background: 'none', border: 'none', color: '#1890ff', cursor: 'pointer', marginBottom: '15px', padding: 0 }}>← Back</button>
-                <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>Login to {selectedBank}</h3>
-                <form onSubmit={handleBankLogin} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  <input type="text" placeholder="Online ID" value={fakeUsername} onChange={(e) => setFakeUsername(e.target.value)} style={{ padding: '12px', border: '1px solid #ccc', borderRadius: '4px' }} required />
-                  <input type="password" placeholder="Passcode" value={fakePassword} onChange={(e) => setFakePassword(e.target.value)} style={{ padding: '12px', border: '1px solid #ccc', borderRadius: '4px' }} required />
-                  <p style={{ fontSize: '0.8rem', color: '#999', textAlign: 'center', margin: 0 }}>By logging in, you agree to the secure transfer of funds.</p>
-                  
-                  <button 
-                    type="submit" 
-                    disabled={modalStep === 'processing' || modalStep === 'success'}
-                    style={{ 
-                      padding: '15px', 
-                      background: (modalStep === 'processing' || modalStep === 'success') ? '#ccc' : '#1890ff', 
-                      color: 'white', border: 'none', borderRadius: '5px', fontSize: '1.1rem', fontWeight: 'bold', 
-                      cursor: (modalStep === 'processing' || modalStep === 'success') ? 'not-allowed' : 'pointer' 
-                    }}
-                  >
-                    {modalStep === 'processing' || modalStep === 'success' ? 'Linking Account...' : 'Agree & Link Account'}
-                  </button>
-                </form>
-              </div>
-            )}
-
-            {modalStep === 'processing' && (
-              <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                <div style={{ border: '4px solid #f3f3f3', borderTop: '4px solid #1890ff', borderRadius: '50%', width: '50px', height: '50px', animation: 'spin 1s linear infinite', margin: '0 auto 20px' }}></div>
-                <h3>Authorizing Transfer...</h3>
-                <p style={{ color: '#666' }}>Securely communicating with {selectedBank}.</p>
-                <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-              </div>
-            )}
-
-            {modalStep === 'success' && (
-              <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                <div style={{ background: '#52c41a', color: 'white', borderRadius: '50%', width: '60px', height: '60px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2rem', margin: '0 auto 20px' }}>✓</div>
-                <h3 style={{ color: '#52c41a' }}>Account Linked!</h3>
-                <p style={{ color: '#666' }}>Redirecting to order confirmation...</p>
-              </div>
-            )}
-
-          </div>
-        </div>
-      )}
     </div>
   );
 };

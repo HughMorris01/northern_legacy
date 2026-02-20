@@ -61,12 +61,14 @@ const userSchema = new mongoose.Schema({
   isAnonymized: { type: Boolean, default: false },
 
   // --- ADDRESSES & PREFERENCES ---
-  address: { 
-    street: { type: String },
-    city: { type: String },
-    postalCode: { type: String },
-    terrainType: { type: String, default: 'Land' },
-  },
+  address: {
+  street: { type: String },
+  city: { type: String },
+  postalCode: { type: String },
+  terrainType: { type: String, default: 'Land' },
+  lat: { type: Number }, 
+  lng: { type: Number }  
+},
   mailingAddress: { 
     street: { type: String },
     city: { type: String },
