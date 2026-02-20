@@ -129,21 +129,18 @@ const ProductScreen = () => {
         }}
       >
         
-        {/* THE FIX: Special badge centered at the top */}
         {isSpecial && !isVisualGrayOut && (
           <span style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', background: '#ffc53d', color: '#111', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
             🌟 On Special!
           </span>
         )}
 
-        {/* THE FIX: Limited Drop moved to the top left */}
         {product.isLimitedRelease && !isVisualGrayOut && (
-          <span style={{ position: 'absolute', top: '-12px', left: '-6px', background: '#e0282e', color: 'white', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}>
+          <span style={{ position: 'absolute', top: '-12px', left: '-10px', background: '#e0282e', color: 'white', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}>
             💎 Limited Drop
           </span>
         )}
 
-        {/* THE FIX: Wrapping the image in a relative container so inventory warnings lock to the bottom right! */}
         <div className="image-container" style={{ position: 'relative' }}>
           
           {isDbOutOfStock && (
@@ -187,6 +184,13 @@ const ProductScreen = () => {
 
           <h1 style={{ margin: '0 0 5px 0', fontSize: 'clamp(1.2rem, 4vw, 1.8rem)', lineHeight: '1.1' }}>{product.name}</h1>
           
+          {/* THE FIX: Conditionally display the newly synced strain lineage data right below the product title! */}
+          {product.strainLineage && (
+            <p style={{ margin: '0 0 10px 0', color: '#666', fontStyle: 'italic', fontSize: '0.9rem' }}>
+              Lineage: {product.strainLineage}
+            </p>
+          )}
+
           <h2 style={{ margin: '0 0 10px 0', fontSize: 'clamp(1.1rem, 3.5vw, 1.5rem)', color: isSpecial && !isVisualGrayOut ? '#d48806' : '#111' }}>
             ${product.price ? (product.price / 100).toFixed(2) : '0.00'}
           </h2>

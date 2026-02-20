@@ -20,6 +20,11 @@ const productSchema = new mongoose.Schema({
     required: false, 
     enum: ['Sativa', 'Indica', 'Hybrid', 'N/A', ''], 
   },
+  // NEW: Added lineage tracking
+  strainLineage: {
+    type: String,
+    required: false
+  },
   description: {
     type: String,
     required: true
@@ -65,11 +70,11 @@ const productSchema = new mongoose.Schema({
   // --- MARKETING & SALES ---
   isLimitedRelease: {
     type: Boolean,
-    default: false // THE FIX: Added this so Mongoose stops stripping it!
+    default: false
   },
   isOnSpecial: {
     type: Boolean,
-    default: false // NEW: Admin flag for the scrolling ticker
+    default: false
   }
 }, {
   timestamps: true

@@ -8,13 +8,14 @@ const products = [
     description: 'Our flagship in-house indica. Sweet, fruity, and deeply relaxing. Perfect for late-night river sessions.',
     price: 4500, 
     stockQuantity: 45, 
-    weightInOunces: 0.125, // 1/8 oz
+    weightInOunces: 0.125, 
     concentrateGrams: 0,
     isLimitedRelease: false,
     isOnSpecial: true,
     metrcPackageUid: '1A40E010000000000000001',
     testingStatus: 'TestPassed', 
     strainType: 'Indica',
+    strainLineage: 'Sour Dubble x Tahoe Alien',
     thcContent: 24.5
   },
   {
@@ -25,13 +26,14 @@ const products = [
     description: 'A heavy-hitting upstate classic from the Ayrloom family farms in Lafayette. A pungent, earthy aroma with a soaring cerebral high.',
     price: 9000,
     stockQuantity: 0, 
-    weightInOunces: 0.25, // THE FIX: Bumped to a 1/4 oz
+    weightInOunces: 0.25, 
     concentrateGrams: 0,
     isLimitedRelease: false,
     isOnSpecial: false,
     metrcPackageUid: '1A40E010000000000000002',
     testingStatus: 'TestPassed',
     strainType: 'Sativa',
+    strainLineage: 'Face Off OG #4 x Dosidos',
     thcContent: 26.2
   },
   {
@@ -42,13 +44,14 @@ const products = [
     description: 'Sun-grown in the Hudson Valley. This hybrid crosses Sour Diesel with Do-Si-Dos for a perfect afternoon balance.',
     price: 4000,
     stockQuantity: 3, 
-    weightInOunces: 0.125, // 1/8 oz
+    weightInOunces: 0.125, 
     concentrateGrams: 0,
     isLimitedRelease: false,
     isOnSpecial: false,
     metrcPackageUid: '1A40E010000000000000003',
     testingStatus: 'TestPassed',
     strainType: 'Hybrid',
+    strainLineage: 'Sour Diesel x Dosidos',
     thcContent: 22.8
   },
   {
@@ -59,13 +62,14 @@ const products = [
     description: 'Crafted by Made For New York. As the name implies, clear your schedule. A deeply sedating indica.',
     price: 18000,
     stockQuantity: 28,
-    weightInOunces: 0.5, // THE FIX: Bumped to a 1/2 oz
+    weightInOunces: 0.5, 
     concentrateGrams: 0,
     isLimitedRelease: true, 
     isOnSpecial: false,
     metrcPackageUid: '1A40E010000000000000004',
     testingStatus: 'TestPassed',
     strainType: 'Indica',
+    strainLineage: 'Ghost OG x Dosidos',
     thcContent: 29.1
   },
   {
@@ -76,13 +80,14 @@ const products = [
     description: 'In-house pheno hunt winner. Frosty, purple hues with a classic cookie dough and gas profile.',
     price: 4500,
     stockQuantity: 1, 
-    weightInOunces: 0.125, // 1/8 oz
+    weightInOunces: 0.125, 
     concentrateGrams: 0,
     isLimitedRelease: false,
     isOnSpecial: false,
     metrcPackageUid: '1A40E010000000000000005',
     testingStatus: 'TestPassed',
     strainType: 'Indica',
+    strainLineage: 'OGKB x Face Off OG',
     thcContent: 25.0
   },
   {
@@ -93,13 +98,14 @@ const products = [
     description: 'Luxury indoor flower from High Peaks. A double-dose of relaxation with incredibly dense bud structure.',
     price: 30000,
     stockQuantity: 4, 
-    weightInOunces: 1.0, // THE FIX: Bumped to a full 1 oz jar!
+    weightInOunces: 1.0, 
     concentrateGrams: 0,
     isLimitedRelease: true, 
     isOnSpecial: false,
     metrcPackageUid: '1A40E010000000000000006',
     testingStatus: 'TestPassed',
     strainType: 'Indica',
+    strainLineage: 'Bubba Diagonal x Dosido',
     thcContent: 31.2
   },
   {
@@ -110,13 +116,14 @@ const products = [
     description: 'Regenerative, sun-grown flower from Cortland. Sweet, creamy smoke with an uplifting, euphoric sativa high.',
     price: 3500,
     stockQuantity: 80,
-    weightInOunces: 0.125, // 1/8 oz
+    weightInOunces: 0.125, 
     concentrateGrams: 0,
     isLimitedRelease: false,
     isOnSpecial: false,
     metrcPackageUid: '1A40E010000000000000008',
     testingStatus: 'TestPassed',
     strainType: 'Sativa',
+    strainLineage: 'Snowman S1 x Face Off OG',
     thcContent: 21.0
   },
   {
@@ -127,13 +134,14 @@ const products = [
     description: 'Minty, chocolatey, and grown right here. A perfectly balanced hybrid for any time of day on the 1000 Islands.',
     price: 4500,
     stockQuantity: 2, 
-    weightInOunces: 0.125, // 1/8 oz
+    weightInOunces: 0.125, 
     concentrateGrams: 0,
     isLimitedRelease: false,
     isOnSpecial: false,
     metrcPackageUid: '1A40E010000000000000009',
     testingStatus: 'TestPassed',
     strainType: 'Hybrid',
+    strainLineage: 'Thin Mint GSC x Face Off OG',
     thcContent: 23.4
   },
   {
@@ -144,13 +152,14 @@ const products = [
     description: 'Premium indoor exotic from the Hudson Valley. Covered in trichomes that look like lunar dust.',
     price: 10000,
     stockQuantity: 10,
-    weightInOunces: 0.25, // THE FIX: Bumped to a 1/4 oz
+    weightInOunces: 0.25, 
     concentrateGrams: 0,
     isLimitedRelease: true, 
     isOnSpecial: false,
     metrcPackageUid: '1A40E010000000000000010',
     testingStatus: 'TestPassed',
     strainType: 'Indica',
+    strainLineage: 'White Tahoe Cookies x Moon Bow',
     thcContent: 28.7
   },
   {
@@ -161,13 +170,14 @@ const products = [
     description: 'Tropical fruit meets cool mint. A fantastic daytime hybrid that keeps you focused and relaxed.',
     price: 4500,
     stockQuantity: 6, 
-    weightInOunces: 0.125, // 1/8 oz
+    weightInOunces: 0.125, 
     concentrateGrams: 0,
     isLimitedRelease: false,
     isOnSpecial: false,
     metrcPackageUid: '1A40E010000000000000011',
     testingStatus: 'TestPassed',
     strainType: 'Hybrid',
+    strainLineage: 'Thin Mint GSC x Face Off OG',
     thcContent: 24.1
   },
   {
@@ -178,13 +188,14 @@ const products = [
     description: 'A classic organic munchie-inducer. Earthy pine flavors that settle you right into the couch.',
     price: 14000,
     stockQuantity: 18,
-    weightInOunces: 0.5, // THE FIX: Bumped to a 1/2 oz
+    weightInOunces: 0.5, 
     concentrateGrams: 0,
     isLimitedRelease: false,
     isOnSpecial: false,
     metrcPackageUid: '1A40E010000000000000012',
     testingStatus: 'TestPassed',
     strainType: 'Indica',
+    strainLineage: 'Platinum GSC x Face Off OG',
     thcContent: 20.5
   },
   {
@@ -195,13 +206,14 @@ const products = [
     description: 'Single-source excellence. Doughy, sweet, and coated in sticky resin. Highly recommended.',
     price: 5000,
     stockQuantity: 5, 
-    weightInOunces: 0.125, // 1/8 oz
+    weightInOunces: 0.125, 
     concentrateGrams: 0,
     isLimitedRelease: false,
     isOnSpecial: false,
     metrcPackageUid: '1A40E010000000000000013',
     testingStatus: 'TestPassed',
     strainType: 'Indica',
+    strainLineage: 'Animal Cookies x Dosidos',
     thcContent: 27.3
   },
   {
@@ -212,13 +224,14 @@ const products = [
     description: 'A sharp, citrus-forward sativa. Ideal for a morning boat ride or an active hike.',
     price: 8000,
     stockQuantity: 22,
-    weightInOunces: 0.25, // THE FIX: Bumped to a 1/4 oz
+    weightInOunces: 0.25, 
     concentrateGrams: 0,
     isLimitedRelease: false,
     isOnSpecial: false,
     metrcPackageUid: '1A40E010000000000000014',
     testingStatus: 'TestPassed',
     strainType: 'Sativa',
+    strainLineage: 'SFV OG x Dosidos',
     thcContent: 23.0
   },
   {
@@ -229,13 +242,14 @@ const products = [
     description: 'Don\'t let the name fool you. A zesty, lemon-heavy sativa that delivers a massive burst of creative energy.',
     price: 5000,
     stockQuantity: 14,
-    weightInOunces: 0.125, // 1/8 oz
+    weightInOunces: 0.125, 
     concentrateGrams: 0,
     isLimitedRelease: true, 
     isOnSpecial: false,
     metrcPackageUid: '1A40E010000000000000015',
     testingStatus: 'TestPassed',
     strainType: 'Sativa',
+    strainLineage: 'Snowman S1 x LemondHeads',
     thcContent: 26.8
   },
 
@@ -255,6 +269,7 @@ const products = [
     metrcPackageUid: '1A40E010000000000000007',
     testingStatus: 'TestPassed',
     strainType: 'Hybrid',
+    strainLineage: 'Hashbar OG x Dark Rainbow #11', // Added to Hash Blast as well!
     thcContent: 74.5
   },
   {
