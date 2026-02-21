@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from '../axios'; 
 import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore'; 
+import { toast } from 'react-toastify';
 
 const FLOWER_CATEGORIES = ['Flower', 'Pre-Roll'];
 const CONCENTRATE_CATEGORIES = ['Concentrate', 'Vape', 'Edible', 'Tincture'];
@@ -65,9 +66,19 @@ const CartScreen = () => {
   };
 
   const updateQtyHandler = async (item, qtyDelta) => {
+    const newQty = item.qty + qtyDelta;
     const isSuccess = addToCart(item, qtyDelta);
+    
     if (isSuccess) {
       await syncCartToDb();
+      
+      // THE FIX: Trigger an info toast if they just added the last available unit
+      if (qtyDelta > 0 && newQty >= item.stockQuantity) {
+        toast.info(`Inventory maximum reached. You have claimed all available units of ${item.name}!`, {
+          icon: '📦',
+          autoClose: 3000
+        });
+      }
     }
   };
 
@@ -173,7 +184,6 @@ const CartScreen = () => {
                 <span>{totalItems}</span>
               </div>
               
-              {/* THE FIX: Visual Compliance Progress Bars */}
               <div style={{ marginBottom: '20px', padding: '15px', background: 'white', borderRadius: '8px', border: '1px solid #ddd' }}>
                 <h4 style={{ margin: '0 0 15px 0', fontSize: '0.95rem', color: '#111' }}>Legal Purchase Limits</h4>
                 
