@@ -236,9 +236,16 @@ const ShippingScreen = () => {
       
       <CheckoutSteps step1 step2 step3 />
 
-      <div style={{ background: '#fff', padding: '15px 20px 20px', borderRadius: '12px', border: '1px solid #eaeaea', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-        <h2 style={{ marginTop: 0, marginBottom: '15px', borderBottom: '2px solid #ddd', paddingBottom: '10px', fontSize: '1.4rem' }}>Delivery Details</h2>
+      <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px solid #eee' }}>
+        <h1 style={{ margin: '0 0 8px 0', fontSize: '2rem', fontWeight: 'bold', color: '#1a1a1a' }}>
+          {step === 1 ? 'Confirm Delivery Address' : 'Choose Delivery Window'}
+        </h1>
+        <p style={{ margin: 0, color: '#666', fontSize: '0.95rem' }}>
+          {step === 1 ? 'Tell us where to deliver your order.' : 'Select when you\'d like us to deliver.'}
+        </p>
+      </div>
 
+      <div style={{ background: '#fff', padding: '15px 20px 20px', borderRadius: '12px', border: '1px solid #eaeaea', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
         {/* --- THE FIX: STRICT 100% HORIZONTAL SLIDING WRAPPER --- */}
         <div style={{ overflow: 'hidden', width: '100%' }}>
           <div style={{ display: 'flex', width: '100%', transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)', transform: step === 1 ? 'translateX(0)' : 'translateX(-100%)', alignItems: 'flex-start' }}>
@@ -410,10 +417,10 @@ const ShippingScreen = () => {
                         
                         <div 
                           onClick={() => toggleAccordion(idx)}
-                          style={{ background: '#f5f5f5', padding: '10px 15px', fontWeight: 'bold', borderBottom: isExpanded ? '1px solid #ddd' : 'none', fontSize: '1rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', userSelect: 'none' }}
+                          style={{ background: '#1a1a1a', color: 'white', padding: '14px 15px', fontWeight: 'bold', borderBottom: isExpanded ? '1px solid #ddd' : 'none', fontSize: '1.05rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', userSelect: 'none' }}
                         >
-                          <span>{dayObj.dayName} ({dayObj.date})</span>
-                          <span style={{ fontSize: '0.8rem', color: '#666', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
+                          <span>📅 {dayObj.dayName} ({dayObj.date})</span>
+                          <span style={{ fontSize: '0.9rem', color: '#fff', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
                             ▼
                           </span>
                         </div>
@@ -495,8 +502,8 @@ const ShippingScreen = () => {
             
             <div style={{ background: '#fffbe6', border: '1px solid #ffe58f', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
               <p style={{ margin: '0 0 5px 0', fontSize: '0.9rem', color: '#666' }}>Scheduled For:</p>
-              <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'bold', color: '#d48806' }}>
-                {selectedSlot?.date} <br/> {selectedSlot?.time}
+              <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 'bold', color: '#d48806' }}>
+                {new Date(selectedSlot?.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} at {selectedSlot?.time}
               </p>
             </div>
 

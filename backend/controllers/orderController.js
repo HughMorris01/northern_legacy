@@ -65,6 +65,13 @@ const addOrderItems = async (req, res) => {
     orderType = 'Water Delivery';
   }
 
+  // 2.5. ENFORCE $100 MINIMUM FOR DELIVERY ORDERS
+  const MIN_DELIVERY_AMOUNT = 100;
+  if (orderType !== 'In-Store Pickup' && totalAmount < MIN_DELIVERY_AMOUNT) {
+    res.status(400);
+    throw new Error(`Delivery orders require a minimum of $${MIN_DELIVERY_AMOUNT.toFixed(2)}. Current total: $${totalAmount.toFixed(2)}`);
+  }
+
   let initialStatus;
   if (orderType === 'In-Store Pickup') {
     initialStatus = paymentMethod === 'Pay In-Store' ? 'Unpaid-Pending Pickup' : 'Paid-Pending Pickup';

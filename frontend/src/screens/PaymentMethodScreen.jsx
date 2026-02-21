@@ -124,7 +124,7 @@ const PaymentMethodScreen = () => {
   const getButtonText = () => {
     if (paymentMethod === 'Pay In-Store') return 'Continue to Final Review';
     if (paymentMethod === 'Aeropay (ACH)') return (linkedAch && !useNewAch) ? `Pay with ${linkedAch}` : 'Link New Bank Account';
-    if (paymentMethod === 'Debit Card') return (linkedDebit && !useNewDebit) ? `Pay with ${linkedDebit}` : 'Link New Debit Card';
+    if (paymentMethod === 'Debit Card') return (linkedDebit && !useNewDebit) ? `Pay with Debit Card` : 'Link New Debit Card';
     return 'Continue';
   };
 
@@ -132,9 +132,12 @@ const PaymentMethodScreen = () => {
     <div style={{ maxWidth: '600px', margin: '20px auto 40px', padding: '0 15px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
       <CheckoutSteps step1 step2 step3 step4 /> 
       
+      <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px solid #eee' }}>
+        <h1 style={{ margin: '0 0 8px 0', fontSize: '2rem', fontWeight: 'bold', color: '#1a1a1a' }}>Choose Payment Method</h1>
+        <p style={{ margin: 0, color: '#666', fontSize: '0.95rem' }}>Select how you'd like to pay for your order.</p>
+      </div>
+      
       <div style={{ background: '#fff', padding: '15px 20px 20px', borderRadius: '12px', border: '1px solid #eaeaea', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-        <h2 style={{ marginTop: 0, marginBottom: '15px', borderBottom: '2px solid #ddd', paddingBottom: '10px', fontSize: '1.4rem' }}>Payment Method</h2>
-        
         <form onSubmit={submitHandler} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           
           {/* ACH BLOCK */}
