@@ -379,7 +379,7 @@ const ProfileDashboardScreen = () => {
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                       <span style={{ fontSize: '0.85rem', color: '#888', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                        {new Date(order.createdAt).toLocaleDateString()}
+                        {new Date(order.orderPlacedAt).toLocaleDateString()}
                       </span>
                       <strong style={{ fontSize: '1.1rem' }}>${order.totalAmount.toFixed(2)}</strong>
                       <span style={{ color: order.status === 'Completed' ? '#28a745' : '#1890ff', fontSize: '0.9rem', fontWeight: 'bold' }}>
