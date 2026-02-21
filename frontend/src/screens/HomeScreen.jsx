@@ -194,7 +194,7 @@ const HomeScreen = () => {
 
       {specials.length > 0 && (
         <div className="ticker-wrapper" style={{ background: '#fffbe6', borderBottom: '1px solid #ffe58f', padding: '10px 0', overflow: 'hidden', whiteSpace: 'nowrap', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-          <div className="ticker-track" style={{ display: 'inline-flex', animation: 'scrollTicker 180s linear infinite', fontWeight: 'bold', fontSize: '1.05rem', letterSpacing: '0.5px' }}>
+          <div className="ticker-track" style={{ display: 'inline-flex', animation: 'scrollTicker 110s linear infinite', fontWeight: 'bold', fontSize: '1.05rem', letterSpacing: '0.5px' }}>
             {infiniteSpecials.map((s, idx) => (
               <span key={`ticker-${s._id}-${idx}`} style={{ display: 'inline-flex', alignItems: 'center' }}>
                 <Link to={`/product/${s._id}`} className="ticker-link">
