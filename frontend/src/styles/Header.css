@@ -1,5 +1,7 @@
 /* frontend/src/styles/Header.css */
 
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital@1&display=swap');
+
 .header-container {
   background-color: #1a1a1a;
   display: flex;
@@ -17,12 +19,23 @@
   flex-wrap: wrap;
   gap: 10px;
   width: 100%;
-  max-width: 1000px; /* Restricts width on large desktop monitors */
+  max-width: 1000px;
+  min-height: 110px;
 }
 
 .header-logo-link {
   display: flex;
   align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
+.logo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
 }
 
 .header-logo-img {
@@ -31,11 +44,50 @@
   mask-image: radial-gradient(circle, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 70%);
 }
 
+.logo-slogan {
+  margin: 0;
+  font-size: 0.55rem; /* reduced to fit proportionally */
+  color: #999;
+  font-weight: 300; /* lighter weight */
+  font-style: italic;
+  letter-spacing: 0.2px;
+  text-align: center;
+  /* allow wrapping on small screens */
+  white-space: normal;
+  font-family: 'Playfair Display', Georgia, serif;
+  text-decoration: none;
+  max-width: 220px; /* cap width to avoid huge slogans */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logo-slogan .slogan-1000 {
+  font-size: 1.7em; /* 130% of the surrounding slogan text */
+  font-weight: 500;
+  font-style: italic;
+  display: inline-block;
+  vertical-align: baseline;
+  margin-right: 2px;
+}
+
+@media (max-width: 480px) {
+  .logo-slogan {
+    font-size: 0.48rem;
+    max-width: 220px; /* allow more room for emphasized "1000" on small screens */
+    overflow: visible; /* don't clip the emphasized span */
+  }
+  .logo-slogan .slogan-1000 {
+    font-size: 1.3em; /* match desktop emphasis on mobile */
+  }
+}
+
 .header-nav {
   display: flex;
   gap: 15px;
   align-items: center;
   flex-wrap: wrap;
+  align-self: flex-end; /* pin navigation to bottom of header */
+  margin-bottom: 6px;
 }
 
 /* Base link styles */

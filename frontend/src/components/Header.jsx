@@ -14,11 +14,14 @@ const Header = () => {
     <header className="header-container">
       <div className="header-content">
         <Link to="/" className="header-logo-link">
-          <img 
-            src="/northern_beta_logo.jpg" 
-            alt="Northern Legacy" 
-            className="header-logo-img" 
-          />
+          <div className="logo-section">
+            <img 
+              src="/northern_beta_logo.jpg" 
+              alt="Northern Legacy" 
+              className="header-logo-img" 
+            />
+            <p className="logo-slogan">The <span className="slogan-1000">1000</span>Islands' Cannabis Dispensary</p>
+          </div>
         </Link>
         
         <nav className="header-nav">
