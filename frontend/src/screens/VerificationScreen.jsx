@@ -25,7 +25,10 @@ const VerificationScreen = () => {
 
   return (
     <div style={{ maxWidth: '800px', margin: '40px auto', padding: '20px', textAlign: 'center', fontFamily: 'sans-serif' }}>
-      <h1 style={{ marginBottom: '10px' }}>Verify Your Identity</h1>
+      <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px solid #eee' }}>
+        <h1 style={{ margin: '0 0 8px 0', fontSize: '2rem', fontWeight: 'bold', color: '#1a1a1a' }}>Complete Identity Verification</h1>
+        <p style={{ margin: 0, color: '#666', fontSize: '0.95rem' }}>Verify your identity to unlock age-gated purchases.</p>
+      </div>
       
       {status === 'pending' && (
         <>
