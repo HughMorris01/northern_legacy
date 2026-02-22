@@ -1,4 +1,4 @@
-# 🌲 Northern Legacy E-Commerce & Logistics Portal 🚤
+![Northen Legacy Dashboard Collage](./docs/media/social-collage.png)
 
 ![Northern Legacy App Preview](docs/media/social-collage.png)
 
