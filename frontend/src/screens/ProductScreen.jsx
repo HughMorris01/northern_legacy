@@ -136,7 +136,7 @@ const ProductScreen = () => {
         )}
 
         {product.isLimitedRelease && !isVisualGrayOut && (
-          <span style={{ position: 'absolute', top: '-12px', left: '-10px', background: '#e0282e', color: 'white', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}>
+          <span style={{ position: 'absolute', top: '-12px', left: '-6px', background: '#e0282e', color: 'white', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}>
             💎 Limited Drop
           </span>
         )}
