@@ -1,4 +1,4 @@
-# 🌲 Northern Legacy E-Commerce & Logistics Portal 🚤
+![Northen Legacy Dashboard Collage](./docs/media/social_collage.png)
 
 Northern Legacy is a licensed microbusiness dispensing cannabis products in the 1000 Islands region of Upstate New York. This platform acts as a custom, vertically integrated regulatory gatekeeper, enabling fully compliant e-commerce ordering for both **Mainland (Land)** and **Maritime (Water)** delivery.
 
