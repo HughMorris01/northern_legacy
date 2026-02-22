@@ -14,17 +14,15 @@ const paymentMethodFromStorage = localStorage.getItem('paymentMethod')
   ? JSON.parse(localStorage.getItem('paymentMethod'))
   : 'Aeropay (ACH)';
 
-// --- LEGAL COMPLIANCE LIMITS ---
 const FLOWER_CATEGORIES = ['Flower', 'Pre-Roll'];
 const CONCENTRATE_CATEGORIES = ['Concentrate', 'Vape', 'Edible', 'Tincture'];
-const LIMIT_FLOWER_OZ = 3.0; // NY Limit
-const LIMIT_CONCENTRATE_G = 24.0; // NY Limit
+const LIMIT_FLOWER_OZ = 3.0; 
+const LIMIT_CONCENTRATE_G = 24.0; 
 
-// Helper to determine accurate concentrate weight in grams
 const getConcentrateGrams = (item) => {
-  if (item.concentrateGrams) return item.concentrateGrams; // If you ever add this field to DB
+  if (item.concentrateGrams) return item.concentrateGrams; 
   if (item.weightInOunces > 0) return Number((item.weightInOunces * 28.3495).toFixed(2));
-  if (item.category === 'Edible' || item.category === 'Tincture') return 1.0; // Safe default for 100mg edibles
+  if (item.category === 'Edible' || item.category === 'Tincture') return 1.0; 
   return 0;
 };
 
@@ -36,6 +34,9 @@ const useCartStore = create((set, get) => ({
   cartItems: cartFromStorage,
   shippingAddress: shippingAddressFromStorage,
   paymentMethod: paymentMethodFromStorage,
+
+  showMergeModal: false,
+  pendingMergeItems: null,
 
   addToCart: (product, qty) => {
     const currentCart = get().cartItems;
@@ -60,15 +61,17 @@ const useCartStore = create((set, get) => ({
     const limitFlower = LEGAL_LIMITS?.MAX_OUNCES_PER_ORDER || LIMIT_FLOWER_OZ;
     const limitConcentrate = LIMIT_CONCENTRATE_G;
 
-    // Dual-Limit Checks
-    if (currentFlowerWeight + addedFlower > limitFlower) {
-      toast.warning(`Legal Limit Reached! You cannot exceed ${limitFlower} ounces of flower per order.`);
-      return false; 
-    }
+    // THE FIX: Only run the compliance block if the user is ADDING to the cart
+    if (qty > 0) {
+      if (currentFlowerWeight + addedFlower > limitFlower) {
+        toast.warning(`Legal Limit Reached! You cannot exceed ${limitFlower} ounces of flower per order.`);
+        return false; 
+      }
 
-    if (currentConcentrateWeight + addedConcentrate > limitConcentrate) {
-      toast.warning(`Legal Limit Reached! You cannot exceed ${limitConcentrate}g of concentrates/edibles per order.`);
-      return false; 
+      if (currentConcentrateWeight + addedConcentrate > limitConcentrate) {
+        toast.warning(`Legal Limit Reached! You cannot exceed ${limitConcentrate}g of concentrates/edibles per order.`);
+        return false; 
+      }
     }
     
     const existingItem = currentCart.find((item) => item._id === product._id);
@@ -117,51 +120,43 @@ const useCartStore = create((set, get) => ({
 
   mergeCarts: (dbCartItems) => {
     const localCart = get().cartItems;
-    let mergedCart = [...localCart];
-
-    let currentFlowerWeight = mergedCart.reduce((total, item) => 
-      FLOWER_CATEGORIES.includes(item.category) ? total + (getFlowerOunces(item) * item.qty) : total, 0);
     
-    let currentConcentrateWeight = mergedCart.reduce((total, item) => 
-      CONCENTRATE_CATEGORIES.includes(item.category) ? total + (getConcentrateGrams(item) * item.qty) : total, 0);
+    if (!dbCartItems || dbCartItems.length === 0) return localCart;
+    if (localCart.length === 0) {
+      set({ cartItems: dbCartItems });
+      localStorage.setItem('cartItems', JSON.stringify(dbCartItems));
+      return dbCartItems;
+    }
 
-    const limitFlower = LEGAL_LIMITS?.MAX_OUNCES_PER_ORDER || LIMIT_FLOWER_OZ;
-    const limitConcentrate = LIMIT_CONCENTRATE_G;
+    set({ pendingMergeItems: dbCartItems, showMergeModal: true });
+    return localCart; 
+  },
+
+  resolveMerge: (acceptMerge) => {
+    const localCart = get().cartItems;
+    const dbCartItems = get().pendingMergeItems;
+
+    if (!acceptMerge || !dbCartItems) {
+      set({ showMergeModal: false, pendingMergeItems: null });
+      return localCart;
+    }
+
+    let mergedCart = [...localCart];
 
     dbCartItems.forEach((dbItem) => {
       const existingItem = mergedCart.find((item) => item._id === dbItem._id);
-      const isFlower = FLOWER_CATEGORIES.includes(dbItem.category);
-      const isConcentrate = CONCENTRATE_CATEGORIES.includes(dbItem.category);
-
+      
       if (existingItem) {
-        const newQty = Math.max(existingItem.qty, dbItem.qty);
-        const qtyDiff = newQty - existingItem.qty;
-        
-        const diffFlower = isFlower ? getFlowerOunces(dbItem) * qtyDiff : 0;
-        const diffConcentrate = isConcentrate ? getConcentrateGrams(dbItem) * qtyDiff : 0;
-
-        if (currentFlowerWeight + diffFlower <= limitFlower && currentConcentrateWeight + diffConcentrate <= limitConcentrate) {
-          existingItem.qty = newQty;
-          currentFlowerWeight += diffFlower;
-          currentConcentrateWeight += diffConcentrate;
-        }
+        existingItem.qty = Math.min(existingItem.qty + dbItem.qty, existingItem.stockQuantity);
       } else {
-        const itemFlower = isFlower ? getFlowerOunces(dbItem) * dbItem.qty : 0;
-        const itemConcentrate = isConcentrate ? getConcentrateGrams(dbItem) * dbItem.qty : 0;
-
-        if (currentFlowerWeight + itemFlower <= limitFlower && currentConcentrateWeight + itemConcentrate <= limitConcentrate) {
-          mergedCart.push(dbItem);
-          currentFlowerWeight += itemFlower;
-          currentConcentrateWeight += itemConcentrate;
-        }
+        mergedCart.push(dbItem);
       }
     });
 
-    set({ cartItems: mergedCart });
+    set({ cartItems: mergedCart, showMergeModal: false, pendingMergeItems: null });
     localStorage.setItem('cartItems', JSON.stringify(mergedCart));
-
-    return mergedCart; 
-  },
+    return mergedCart;
+  }
 }));
 
 export default useCartStore;

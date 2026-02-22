@@ -22,6 +22,7 @@ const PlaceOrderScreen = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [inventoryIssue, setInventoryIssue] = useState(null); 
+  const [limitIssue, setLimitIssue] = useState(null); // NEW: Track compliance limits
 
   useEffect(() => {
     if (cartItems.length === 0) return;
@@ -54,6 +55,7 @@ const PlaceOrderScreen = () => {
       setLoading(true);
       setError('');
       setInventoryIssue(null);
+      setLimitIssue(null);
 
       const { data } = await axios.post('/api/orders', {
         orderItems: cartItems,
@@ -69,6 +71,10 @@ const PlaceOrderScreen = () => {
       if (err.response?.data?.errorType === 'INVENTORY_SHORTAGE' || err.response?.status === 409) {
         setInventoryIssue(err.response.data);
         toast.warning('Cart update required to proceed.');
+      } else if (err.response?.data?.errorType === 'DAILY_LIMIT_EXCEEDED') {
+        // THE FIX: Catch the new backend compliance error
+        setLimitIssue(err.response.data.message);
+        toast.error('Legal limits exceeded for today.');
       } else {
         setError(err.response?.data?.message || 'Failed to place order.');
       }
@@ -96,43 +102,19 @@ const PlaceOrderScreen = () => {
     <div style={{ maxWidth: '1000px', margin: '20px auto 40px', padding: '0 15px', fontFamily: 'sans-serif' }}>
       <CheckoutSteps step1 step2 step3 step4 step5 />
 
-      {/* THE FIX: Dynamic CSS injected directly into the component to handle responsive re-ordering */}
       <style>{`
-        .place-order-grid {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-          margin-top: 20px;
-        }
-        .order-summary-col {
-          order: -1; /* Pulls the summary to the VERY TOP on mobile! */
-          border: 1px solid #eaeaea;
-          padding: 20px;
-          border-radius: 12px;
-          background: #fff;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-        .order-details-col {
-          order: 1;
-        }
+        .place-order-grid { display: flex; flex-direction: column; gap: 20px; margin-top: 20px; }
+        .order-summary-col { order: -1; border: 1px solid #eaeaea; padding: 20px; border-radius: 12px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .order-details-col { order: 1; }
         @media (min-width: 768px) {
-          .place-order-grid {
-            display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            gap: 30px;
-            align-items: start;
-          }
-          .order-summary-col {
-            order: 2; /* Puts it back on the right side for desktop */
-            position: sticky;
-            top: 20px;
-          }
+          .place-order-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; align-items: start; }
+          .order-summary-col { order: 2; position: sticky; top: 20px; }
         }
       `}</style>
 
       <div className="place-order-grid">
         
-        {/* LEFT COLUMN: Review Info (Rendered second on mobile) */}
+        {/* LEFT COLUMN: Review Info */}
         <div className="order-details-col">
           <div style={{ paddingBottom: '15px', borderBottom: '1px solid #eee', marginBottom: '15px' }}>
             <h2 style={{ margin: '0 0 10px 0', fontSize: '1.3rem' }}>Order Details</h2>
@@ -184,13 +166,24 @@ const PlaceOrderScreen = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Order Summary (Rendered FIRST on mobile) */}
+        {/* RIGHT COLUMN: Order Summary */}
         <div className="order-summary-col">
           <h2 style={{ marginTop: 0, marginBottom: '15px', borderBottom: '2px solid #ddd', paddingBottom: '10px', fontSize: '1.4rem' }}>Order Summary</h2>
           
-          {error && !inventoryIssue && <div style={{ background: '#ff4d4f', color: 'white', padding: '10px', borderRadius: '5px', marginBottom: '15px', fontSize: '0.9rem', fontWeight: 'bold' }}>{error}</div>}
+          {error && !inventoryIssue && !limitIssue && <div style={{ background: '#ff4d4f', color: 'white', padding: '10px', borderRadius: '5px', marginBottom: '15px', fontSize: '0.9rem', fontWeight: 'bold' }}>{error}</div>}
 
-          {inventoryIssue && (
+          {/* THE FIX: Render the Limit Exceeded Warning */}
+          {limitIssue && (
+             <div style={{ background: '#fff2f0', border: '1px solid #ffccc7', padding: '15px', borderRadius: '8px', marginBottom: '15px', animation: 'fadeIn 0.3s' }}>
+              <h3 style={{ color: '#cf1322', margin: '0 0 8px 0', fontSize: '1.05rem' }}>🛑 Legal Limit Exceeded</h3>
+              <p style={{ margin: '0 0 12px 0', color: '#666', fontSize: '0.85rem', lineHeight: '1.4' }}>{limitIssue}</p>
+              <Link to="/cart" style={{ display: 'block', textAlign: 'center', width: '100%', padding: '10px', background: '#cf1322', color: 'white', textDecoration: 'none', borderRadius: '5px', fontWeight: 'bold', fontSize: '0.95rem', boxSizing: 'border-box' }}>
+                Return to Cart to Edit
+              </Link>
+            </div>
+          )}
+
+          {inventoryIssue && !limitIssue && (
             <div style={{ background: '#fffbe6', border: '1px solid #ffe58f', padding: '15px', borderRadius: '8px', marginBottom: '15px', animation: 'fadeIn 0.3s' }}>
               <h3 style={{ color: '#d48806', margin: '0 0 8px 0', fontSize: '1.05rem' }}>⚠️ Cart Adjustment Needed</h3>
               <p style={{ margin: '0 0 12px 0', color: '#666', fontSize: '0.85rem', lineHeight: '1.4' }}>{inventoryIssue.message}</p>
@@ -238,12 +231,12 @@ const PlaceOrderScreen = () => {
 
             <button 
               onClick={executeFinalOrder}
-              disabled={cartItems.length === 0 || loading || inventoryIssue}
+              disabled={cartItems.length === 0 || loading || inventoryIssue || limitIssue}
               style={{ 
                 width: '100%', padding: '15px', marginTop: '10px', 
-                background: (cartItems.length === 0 || loading || inventoryIssue) ? '#ccc' : 'black', 
+                background: (cartItems.length === 0 || loading || inventoryIssue || limitIssue) ? '#ccc' : 'black', 
                 color: 'white', border: 'none', borderRadius: '5px', 
-                cursor: (cartItems.length === 0 || loading || inventoryIssue) ? 'not-allowed' : 'pointer', 
+                cursor: (cartItems.length === 0 || loading || inventoryIssue || limitIssue) ? 'not-allowed' : 'pointer', 
                 fontSize: '1.1rem', fontWeight: 'bold', transition: 'background 0.3s'
               }}
             >

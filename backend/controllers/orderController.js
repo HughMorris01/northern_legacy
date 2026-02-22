@@ -22,8 +22,6 @@ const addOrderItems = async (req, res) => {
   for (const item of orderItems) {
     const product = await Product.findById(item._id);
     
-    // THE FIX: If the product is missing (deleted or old seed data), 
-    // send back the structured "INVENTORY_SHORTAGE" payload so the UI can prompt the user to remove it!
     if (!product) {
       return res.status(404).json({ 
         message: `${item.name} is no longer available in our catalog.`,
@@ -65,7 +63,6 @@ const addOrderItems = async (req, res) => {
     orderType = 'Water Delivery';
   }
 
-  // 2.5. ENFORCE $100 MINIMUM FOR DELIVERY ORDERS
   const MIN_DELIVERY_AMOUNT = 100;
   if (orderType !== 'In-Store Pickup' && totalAmount < MIN_DELIVERY_AMOUNT) {
     res.status(400);
@@ -79,10 +76,45 @@ const addOrderItems = async (req, res) => {
     initialStatus = 'Paid-Pending Delivery'; 
   }
 
-  // 3. GENERATE HANDOFF TOKEN
+  // ==========================================
+  // 3. THE DAILY COMPLIANCE GATEKEEPER
+  // ==========================================
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // Fetch all successful orders this user has ALREADY placed today
+  const todaysOrders = await Order.find({
+    customerId: req.user._id,
+    createdAt: { $gte: startOfDay, $lte: endOfDay },
+    // Ignore cancelled or rejected orders in the tally!
+    status: { $nin: ['Cancelled', 'Refunded', 'Failed'] } 
+  });
+
+  let previousFlowerOz = 0;
+  let previousConcentrateG = 0;
+
+  todaysOrders.forEach(order => {
+    // We already calculated the totals for past orders when we saved them!
+    previousFlowerOz += (order.totalWeightInOunces || 0);
+    previousConcentrateG += (order.totalConcentrateGrams || 0);
+  });
+
+  // Check against NYS Limits (3.0oz Flower / 24.0g Concentrate)
+  if ((previousFlowerOz + calculatedTotalWeight) > 3.0 || (previousConcentrateG + calculatedTotalConcentrate) > 24.0) {
+    return res.status(400).json({
+      errorType: 'DAILY_LIMIT_EXCEEDED',
+      message: `This order exceeds your daily legal limit when combined with previous purchases today. You have already bought ${previousFlowerOz.toFixed(2)}oz of flower and ${previousConcentrateG.toFixed(1)}g of concentrates today.`
+    });
+  }
+  // ==========================================
+
+  // 4. GENERATE HANDOFF TOKEN
   const handoffToken = `NL-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-  // 4. CREATE ORDER
+  // 5. CREATE ORDER
   const now = new Date(); 
   const isPrepaid = paymentMethod !== 'Pay In-Store';
 
@@ -103,7 +135,7 @@ const addOrderItems = async (req, res) => {
 
   const createdOrder = await order.save();
 
-  // 5. THE DEDUCTION
+  // 6. THE DEDUCTION
   for (const item of orderItems) {
     await Product.findByIdAndUpdate(item._id, {
       $inc: { stockQuantity: -item.qty } 

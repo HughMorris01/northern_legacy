@@ -72,7 +72,7 @@ const CartScreen = () => {
     if (isSuccess) {
       await syncCartToDb();
       
-      // THE FIX: Trigger an info toast if they just added the last available unit
+      // Trigger an info toast if they just added the last available unit
       if (qtyDelta > 0 && newQty >= item.stockQuantity) {
         toast.info(`Inventory maximum reached. You have claimed all available units of ${item.name}!`, {
           icon: '📦',
