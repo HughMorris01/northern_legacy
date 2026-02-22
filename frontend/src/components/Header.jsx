@@ -20,7 +20,7 @@ const Header = () => {
               alt="Northern Legacy" 
               className="header-logo-img" 
             />
-            <p className="logo-slogan">The <span className="slogan-1000">1000</span>Islands' Cannabis Dispensary</p>
+            <p className="logo-slogan">The <span className="slogan-1000">1000</span> <span className="slogan-islands">Islands'</span>Cannabis Dispensary</p>
           </div>
         </Link>
         

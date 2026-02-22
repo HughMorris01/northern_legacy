@@ -62,8 +62,17 @@
 }
 
 .logo-slogan .slogan-1000 {
-  font-size: 1.7em; /* 130% of the surrounding slogan text */
+  font-size: 1.4em; /* 130% of the surrounding slogan text */
   font-weight: 500;
+  color: orange;
+  font-style: italic;
+  display: inline-block;
+  vertical-align: baseline;
+}
+.logo-slogan .slogan-islands {
+  font-size: 1.1em; /* 110% of the surrounding slogan text */
+  font-weight: 500;
+  color: orange;
   font-style: italic;
   display: inline-block;
   vertical-align: baseline;
