@@ -34,6 +34,14 @@ const getFractionalDisplay = (item) => {
   return `${decimalOz.toFixed(3)} oz`;
 };
 
+// THE FIX: Array of compliance and development warnings
+const DISCLAIMERS = [
+  "⚠️ App in active development",
+  "🚫 Sales are not real (Demo Mode)",
+  "📝 Northern Legacy is a license-pending applicant",
+  "🧪 Test environment only: No actual inventory"
+];
+
 const HomeScreen = () => {
   const location = useLocation();
   const message = location.state?.message;
@@ -197,9 +205,15 @@ const HomeScreen = () => {
           <div className="ticker-track" style={{ display: 'inline-flex', animation: 'scrollTicker 110s linear infinite', fontWeight: 'bold', fontSize: '1.05rem', letterSpacing: '0.5px' }}>
             {infiniteSpecials.map((s, idx) => (
               <span key={`ticker-${s._id}-${idx}`} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                <Link to={`/product/${s._id}`} className="ticker-link">
+                <Link to={`/product/${s._id}`} className="ticker-link" style={{ color: '#d48806', textDecoration: 'none' }}>
                   🔥 {s.name} on special for ${(s.price/100).toFixed(2)}!
                 </Link>
+                <span style={{ color: '#ffe58f', margin: '0 20px' }}>|</span>
+                
+                {/* THE FIX: Injecting the cycling disclaimer array */}
+                <span style={{ color: '#cf1322', fontStyle: 'italic', fontWeight: 'bold' }}>
+                  {DISCLAIMERS[idx % DISCLAIMERS.length]}
+                </span>
                 <span style={{ color: '#ffe58f', margin: '0 20px' }}>|</span>
               </span>
             ))}
@@ -245,12 +259,10 @@ const HomeScreen = () => {
                   return (
                     <div key={`limited-${product._id}-${index}`} className={`product-grid-card ${isVisualGrayOut ? 'gray-out' : ''}`} style={{ minWidth: 'clamp(240px, 70vw, 280px)', border: '2px solid #e0282e', borderRadius: '10px', position: 'relative', background: '#fff', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', padding: 0 }}>
                       
-                      {/* THE FIX: Limited Drop stays top left */}
                       <span style={{ position: 'absolute', top: '-12px', left: '-10px', background: '#e0282e', color: 'white', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}>
                         💎 Limited Drop
                       </span>
 
-                      {/* THE FIX: On Special moved to the absolute top center using X translation */}
                       {isSpecial && !isVisualGrayOut && (
                         <span style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', background: '#ffc53d', color: '#111', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
                           🌟 On Special!
@@ -258,7 +270,6 @@ const HomeScreen = () => {
                       )}
 
                       <div style={{ position: 'relative' }}>
-                        {/* THE FIX: All inventory warnings permanently locked to the bottom right of the image wrapper */}
                         {isDbOutOfStock && (
                           <span style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#555', color: 'white', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
                             Out of Stock
@@ -368,14 +379,12 @@ const HomeScreen = () => {
                 style={isSpecial && !isVisualGrayOut ? { border: '2px solid #ffc53d', boxShadow: '0 0 12px rgba(255,197,61,0.5)' } : {}}
               >
                 
-                {/* THE FIX: Centered the special badge on the main grid cards too */}
                 {isSpecial && !isVisualGrayOut && (
                   <span style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', background: '#ffc53d', color: '#111', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
                     🌟 On Special!
                   </span>
                 )}
 
-                {/* THE FIX: Render Limited Drop independently of Special status */}
                 {product.isLimitedRelease && !isVisualGrayOut && (
                   <span style={{ position: 'absolute', top: '-10px', left: '-10px', background: '#e0282e', color: 'white', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
                     💎 Limited Drop
@@ -383,7 +392,6 @@ const HomeScreen = () => {
                 )}
 
                 <div className="product-image-wrapper">
-                  {/* THE FIX: Permanently locked the inventory warnings to the bottom right */}
                   {isDbOutOfStock && (
                     <span style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#555', color: 'white', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '6px', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
                       Out of Stock

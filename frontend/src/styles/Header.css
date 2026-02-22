@@ -40,6 +40,7 @@
 
 .header-logo-img {
   height: 70px;
+  width:90px;
   -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 70%);
   mask-image: radial-gradient(circle, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 70%);
 }
@@ -79,15 +80,24 @@
   margin-right: 2px;
 }
 
-@media (max-width: 768x) {
+@media (max-width: 768px) {
   .logo-slogan {
     font-size: 0.48rem;
     max-width: 220px; /* allow more room for emphasized "1000" on small screens */
     overflow: visible; /* don't clip the emphasized span */
   }
   .logo-slogan .slogan-1000 {
-    font-size: 1.3em; /* match desktop emphasis on mobile */
+    font-size: 1.35em; /* match desktop emphasis on mobile */
   }
+  .logo-slogan .slogan-islands {
+  font-size: 1.1em; /* 110% of the surrounding slogan text */
+  font-weight: 500;
+  color: orange;
+  font-style: italic;
+  display: inline-block;
+  vertical-align: baseline;
+  margin-right: 2px;
+}
 }
 
 .header-nav {

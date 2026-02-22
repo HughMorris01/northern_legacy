@@ -1,21 +1,107 @@
 /* frontend/src/screens/ProductScreen.css */
 
+.product-screen-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: clamp(5px, 2vw, 20px);
+    font-family: sans-serif;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 20px;
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+    font-size: 0.85rem;
+    padding: 8px 16px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.2s;
+}
+
+.back-link:hover {
+    background: #f5f5f5;
+    border-color: #ccc;
+}
+
 .product-card {
     display: flex;
-    flex-direction: column; /* Default to mobile stacking */
+    flex-direction: column;
     gap: clamp(20px, 4vw, 40px);
     background: #fff;
     padding: clamp(15px, 3vw, 30px);
     border-radius: 12px;
     border: 1px solid #eaeaea;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    position: relative;
 }
 
-/* --- MOBILE IMAGE CONTROLS --- */
+.product-card.special-card {
+    border: 2px solid #ffc53d;
+    box-shadow: 0 0 12px rgba(255,197,61,0.5);
+}
+
+/* --- BADGE STYLES --- */
+.badge {
+    position: absolute;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border-radius: 6px;
+    z-index: 10;
+}
+
+.badge-special {
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    background: #ffc53d;
+    color: #111;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.badge-limited {
+    top: -12px;
+    left: -6px;
+    background: #e0282e;
+    color: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.badge-out {
+    bottom: -10px;
+    right: -10px;
+    background: #555;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.badge-maxed {
+    bottom: -10px;
+    right: -10px;
+    background: #d48806;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.badge-low {
+    bottom: -10px;
+    right: -10px;
+    background: #ff4d4f;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* --- IMAGE CONTROLS --- */
 .image-container {
     position: relative;
     width: 100%;
-    /* THE FIX: Drastically reduced height mapped to the viewport height */
     height: clamp(160px, 22vh, 220px); 
 }
 
@@ -24,51 +110,228 @@
     height: 100%;
     object-fit: cover;
     border-radius: 8px;
+    display: block;
     transition: all 0.3s;
 }
 
-/* --- DESKTOP BREAKPOINT (Tablets & up) --- */
-@media (min-width: 768px) {
-    .product-card {
-        flex-direction: row; /* Switch to side-by-side */
-        align-items: center; /* Center items vertically relative to each other */
-        justify-content: space-between;
-    }
-
-    .image-container {
-        flex: 1 1 40%; /* Take up roughly 40% width */
-        height: auto; /* Release the fixed mobile height */
-        /* THE FIX FOR DESKTOP SCREENSHOT: Cap the max height so it doesn't dwarf short text */
-        max-height: 500px; 
-        aspect-ratio: 4 / 3; /* Optional: Provides a nice default shape */
-    }
-
-    .details-container {
-        flex: 1 1 55%; /* Take up the rest */
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-}
-
-/* Utility Classes */
 .gray-out {
     opacity: 0.5;
     filter: grayscale(100%);
 }
 
-/* Badge Styles */
-.badge {
-    position: absolute;
-    top: 10px;
-    padding: 4px 8px;
+/* --- DETAILS SECTION --- */
+.product-tags {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.brand-category {
+    color: #666;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    font-weight: bold;
+}
+
+.strain-badge {
+    padding: 2px 8px;
+    border-radius: 15px;
+    font-size: 0.65rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.strain-sativa { background: #fff7e6; border: 1px solid #ffd591; color: #d46b08; }
+.strain-indica { background: #f3e8ff; border: 1px solid #d8b4fe; color: #7e22ce; }
+.strain-hybrid { background: #f6ffed; border: 1px solid #b7eb8f; color: #389e0d; }
+
+.product-title {
+    margin: 0 0 5px 0;
+    font-size: clamp(1.2rem, 4vw, 1.8rem);
+    line-height: 1.1;
+}
+
+.product-lineage {
+    margin: 0 0 10px 0;
+    color: #666;
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+.product-price {
+    margin: 0 0 10px 0;
+    font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+    color: #111;
+}
+
+.product-price.special-price {
+    color: #d48806;
+}
+
+.product-info-box {
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border: 1px solid #eee;
+}
+
+.product-description {
+    margin: 0 0 8px 0;
+    font-size: clamp(0.85rem, 2vw, 0.95rem);
+    line-height: 1.4;
+    color: #444;
+}
+
+.product-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    border-top: 1px solid #ddd;
+    padding-top: 8px;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 0.75rem;
+    display: block;
+}
+
+.stat-value {
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+/* --- ACTIONS SECTION --- */
+.product-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+    min-height: 96px;
+}
+
+.out-of-stock-box {
+    padding: 10px;
+    background: #f5f5f5;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.out-of-stock-text {
+    color: #666;
+    font-weight: bold;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.low-stock-warning-box {
+    padding: 10px;
+    background: #fffbe6;
+    border: 1px solid #ffe58f;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.low-stock-warning-text {
+    color: #d48806;
+    font-weight: bold;
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.add-to-cart-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: stretch;
+}
+
+.qty-container {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1 1 70px;
+}
+
+.qty-label {
     font-size: 0.7rem;
     font-weight: bold;
-    border-radius: 4px;
-    z-index: 10;
-    color: white;
+    color: #666;
 }
-.badge-limited { left: -5px; background: #e0282e; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-.badge-out { right: -5px; background: #555; }
-.badge-maxed { right: -5px; background: #d48806; }
-.badge-low { right: -5px; background: #ff4d4f; }
+
+.qty-select {
+    padding: 8px;
+    border-radius: 8px;
+    border: 2px solid #ccc;
+    font-size: 1rem;
+    background: white;
+    cursor: pointer;
+    height: 100%;
+}
+
+.add-to-cart-btn {
+    flex: 3 1 150px;
+    padding: 10px 15px;
+    background: black;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.05rem;
+    font-weight: bold;
+    align-self: flex-end;
+    transition: background 0.2s;
+    height: 42px;
+}
+
+.add-to-cart-btn:hover {
+    background: #333;
+}
+
+.view-cart-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+    background: #1890ff;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1rem;
+    transition: background 0.2s;
+    box-sizing: border-box;
+    height: 42px;
+}
+
+.view-cart-btn:hover {
+    background: #096dd9;
+}
+
+/* --- DESKTOP BREAKPOINT --- */
+@media (min-width: 768px) {
+    .product-card {
+        flex-direction: row; 
+        align-items: center; 
+        justify-content: space-between;
+    }
+
+    .image-container {
+        flex: 1 1 40%; 
+        height: auto; 
+        max-height: 500px; 
+        aspect-ratio: 4 / 3; 
+    }
+
+    .details-container {
+        flex: 1 1 55%; 
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+}
