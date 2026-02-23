@@ -114,128 +114,140 @@ const CartScreen = () => {
           </Link>
         </div>
       ) : (
-        <div className="cart-grid">
-          
-          <div>
-            {cartItems.map((item) => (
-              <div key={item._id} className="cart-item-row">
-                
-                <div className="cart-item-info">
-                  <Link to={`/product/${item._id}`} className="cart-item-title">
-                    {item.name}
-                  </Link>
-                  <span className="cart-item-subtitle">
-                    {getFractionalDisplay(item)}
-                  </span>
-                </div>
-                
-                <div className="cart-item-qty-col">
-                  <div className="qty-controls">
-                    <button 
-                      onClick={() => updateQtyHandler(item, -1)}
-                      disabled={item.qty <= 0}
-                      className="qty-btn"
-                    >
-                      -
-                    </button>
-                    <span className={`qty-value ${item.qty === 0 ? 'zero' : ''}`}>
-                      {item.qty}
-                    </span>
-                    <button 
-                      onClick={() => updateQtyHandler(item, 1)}
-                      disabled={item.qty >= item.stockQuantity}
-                      className="qty-btn"
-                    >
-                      +
-                    </button>
-                  </div>
-                  <span className="cart-item-unit-price">
-                    ${(item.price / 100).toFixed(2)} / ea
-                  </span>
-                </div>
-                
-                <div className="spacer"></div>
-                
-                <div className="cart-item-actions">
-                  <span className={`cart-item-total ${item.qty === 0 ? 'zero' : ''}`}>
-                    Total: ${((item.price * item.qty) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                  <button 
-                    onClick={() => removeItemHandler(item._id)}
-                    className="remove-btn"
-                  >
-                    Remove
-                  </button>
-                </div>
-
-              </div>
-            ))}
-          </div>
-
-          <div className="cart-summary-col">
-            <div className="cart-summary-box">
-              <h2 className="cart-summary-title">Order Summary</h2>
-              
-              <div className="summary-item-count">
-                <span><strong>Total Items:</strong></span> 
-                <span>{totalItems}</span>
-              </div>
-              
-              <div className="limits-box">
-                <h4 className="limits-title">Legal Purchase Limits</h4>
-                
-                <div className="limit-row">
-                  <div className="limit-label-wrapper">
-                    <span>Flower & Pre-Rolls</span>
-                    <span className={`limit-value ${totalFlowerWeight > 3.0 ? 'exceeded' : ''}`}>
-                      {totalFlowerWeight.toFixed(2)} / 3.0 oz
-                    </span>
-                  </div>
-                  <div className="progress-track">
-                    <div 
-                      className={`progress-fill ${totalFlowerWeight > 3.0 ? 'danger' : 'flower-safe'}`} 
-                      style={{ width: `${Math.min((totalFlowerWeight / 3.0) * 100, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="limit-label-wrapper">
-                    <span>Vapes & Edibles</span>
-                    <span className={`limit-value ${totalConcentrateWeight > 24.0 ? 'exceeded' : ''}`}>
-                      {totalConcentrateWeight.toFixed(1)} / 24.0 g
-                    </span>
-                  </div>
-                  <div className="progress-track">
-                    <div 
-                      className={`progress-fill ${totalConcentrateWeight > 24.0 ? 'danger' : 'concentrate-safe'}`}
-                      style={{ width: `${Math.min((totalConcentrateWeight / 24.0) * 100, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="cart-total-row">
-                <span>Total:</span> 
-                <span>${(totalPrice / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
-              
-              <button 
-                onClick={checkoutHandler}
-                disabled={totalItems === 0 || isOverLimit} 
-                className="checkout-btn"
-              >
-                Proceed to Checkout
-              </button>
-
-              <Link to="/" className="continue-shopping-link">
-                Continue Shopping
-              </Link>
-
+        <>
+          {/* THE FIX: Highly visible warning banner that only shows when over the limit */}
+          {isOverLimit && (
+            <div className="limit-warning-banner">
+              <h3>🛑 Legal Limit Exceeded</h3>
+              <p>
+                Your combined cart exceeds NYS legal purchase limits. Please use the <strong>-</strong> buttons or <strong>Remove</strong> items below to get back under the limit. Checkout will remain locked until your cart is compliant.
+              </p>
             </div>
-          </div>
+          )}
 
-        </div>
+          <div className="cart-grid">
+            
+            <div>
+              {cartItems.map((item) => (
+                <div key={item._id} className="cart-item-row">
+                  
+                  <div className="cart-item-info">
+                    <Link to={`/product/${item._id}`} className="cart-item-title">
+                      {item.name}
+                    </Link>
+                    <span className="cart-item-subtitle">
+                      {getFractionalDisplay(item)}
+                    </span>
+                  </div>
+                  
+                  <div className="cart-item-qty-col">
+                    <div className="qty-controls">
+                      <button 
+                        onClick={() => updateQtyHandler(item, -1)}
+                        disabled={item.qty <= 0}
+                        className="qty-btn"
+                      >
+                        -
+                      </button>
+                      <span className={`qty-value ${item.qty === 0 ? 'zero' : ''}`}>
+                        {item.qty}
+                      </span>
+                      <button 
+                        onClick={() => updateQtyHandler(item, 1)}
+                        disabled={item.qty >= item.stockQuantity}
+                        className="qty-btn"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <span className="cart-item-unit-price">
+                      ${(item.price / 100).toFixed(2)} / ea
+                    </span>
+                  </div>
+                  
+                  <div className="spacer"></div>
+                  
+                  <div className="cart-item-actions">
+                    <span className={`cart-item-total ${item.qty === 0 ? 'zero' : ''}`}>
+                      Total: ${((item.price * item.qty) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <button 
+                      onClick={() => removeItemHandler(item._id)}
+                      className="remove-btn"
+                    >
+                      Remove
+                    </button>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+
+            <div className="cart-summary-col">
+              <div className="cart-summary-box">
+                <h2 className="cart-summary-title">Order Summary</h2>
+                
+                <div className="summary-item-count">
+                  <span><strong>Total Items:</strong></span> 
+                  <span>{totalItems}</span>
+                </div>
+                
+                <div className="limits-box">
+                  <h4 className="limits-title">Legal Purchase Limits</h4>
+                  
+                  <div className="limit-row">
+                    <div className="limit-label-wrapper">
+                      <span>Flower & Pre-Rolls</span>
+                      <span className={`limit-value ${totalFlowerWeight > 3.0 ? 'exceeded' : ''}`}>
+                        {totalFlowerWeight.toFixed(2)} / 3.0 oz
+                      </span>
+                    </div>
+                    <div className="progress-track">
+                      <div 
+                        className={`progress-fill ${totalFlowerWeight > 3.0 ? 'danger' : 'flower-safe'}`} 
+                        style={{ width: `${Math.min((totalFlowerWeight / 3.0) * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="limit-label-wrapper">
+                      <span>Vapes & Edibles</span>
+                      <span className={`limit-value ${totalConcentrateWeight > 24.0 ? 'exceeded' : ''}`}>
+                        {totalConcentrateWeight.toFixed(1)} / 24.0 g
+                      </span>
+                    </div>
+                    <div className="progress-track">
+                      <div 
+                        className={`progress-fill ${totalConcentrateWeight > 24.0 ? 'danger' : 'concentrate-safe'}`}
+                        style={{ width: `${Math.min((totalConcentrateWeight / 24.0) * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="cart-total-row">
+                  <span>Total:</span> 
+                  <span>${(totalPrice / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                
+                <button 
+                  onClick={checkoutHandler}
+                  disabled={totalItems === 0 || isOverLimit} 
+                  className="checkout-btn"
+                >
+                  Proceed to Checkout
+                </button>
+
+                <Link to="/" className="continue-shopping-link">
+                  Continue Shopping
+                </Link>
+
+              </div>
+            </div>
+
+          </div>
+        </>
       )}
     </div>
   );

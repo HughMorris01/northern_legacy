@@ -310,3 +310,26 @@
 .continue-shopping-link:hover {
     background: #f5f5f5;
 }
+
+/* --- LIMIT WARNING BANNER --- */
+.limit-warning-banner {
+    background: #fff2f0;
+    border: 1px solid #ffccc7;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    color: #cf1322;
+    animation: fadeIn 0.3s;
+}
+
+.limit-warning-banner h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.05rem;
+}
+
+.limit-warning-banner p {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: #444;
+}
