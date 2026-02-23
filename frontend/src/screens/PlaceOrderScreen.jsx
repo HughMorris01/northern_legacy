@@ -50,7 +50,6 @@ const PlaceOrderScreen = () => {
   else if (shippingAddress.terrainType === 'Water') orderTypeDisplay = 'Water Delivery';
   else if (shippingAddress.terrainType === 'Land') orderTypeDisplay = 'Land Delivery';
 
-  // THE FIX: Safely parse the date string and get the day of the week
   let formattedDeliveryDate = shippingAddress.deliveryDate;
   if (shippingAddress.deliveryDate) {
     const [year, month, day] = shippingAddress.deliveryDate.split('-');
@@ -91,17 +90,20 @@ const PlaceOrderScreen = () => {
     }
   };
 
-  const fixCartHandler = () => {
+  // THE FIX: Accept a redirectPath parameter to easily route them to '/' or '/cart'
+  const fixCartHandler = (shouldRedirect = false, redirectPath = '/cart') => {
     if (inventoryIssue.remainingQty === 0) {
       removeFromCart(inventoryIssue.product._id);
       toast.info(`${inventoryIssue.product.name} removed from cart.`);
       setInventoryIssue(null); 
+      if (shouldRedirect) navigate(redirectPath);
     } else {
       removeFromCart(inventoryIssue.product._id);
       setTimeout(() => {
         addToCart(inventoryIssue.product, inventoryIssue.remainingQty);
         toast.success(`Cart corrected to ${inventoryIssue.remainingQty} available units.`);
         setInventoryIssue(null); 
+        if (shouldRedirect) navigate(redirectPath);
       }, 50);
     }
   };
@@ -140,7 +142,6 @@ const PlaceOrderScreen = () => {
               }
             </p>
             
-            {/* THE FIX: Outputting the newly formatted date with day of the week */}
             {!isPickup && shippingAddress.deliveryDate && (
               <p style={{ margin: '8px 0 0 0', color: '#1890ff', fontWeight: 'bold', fontSize: '0.95rem' }}>
                 Delivery Window: {shippingAddress.deliveryTimeSlot} on {formattedDeliveryDate}
@@ -194,14 +195,37 @@ const PlaceOrderScreen = () => {
               <h3 style={{ color: '#d48806', margin: '0 0 8px 0', fontSize: '1.05rem' }}>⚠️ Cart Adjustment Needed</h3>
               <p style={{ margin: '0 0 12px 0', color: '#666', fontSize: '0.85rem', lineHeight: '1.4' }}>{inventoryIssue.message}</p>
               
-              <button 
-                onClick={fixCartHandler}
-                style={{ width: '100%', padding: '10px', background: '#d48806', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.95rem' }}
-              >
-                {inventoryIssue.remainingQty === 0 
-                  ? `Remove ${inventoryIssue.product.name} from Cart` 
-                  : `Update Cart to ${inventoryIssue.remainingQty} Units`}
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {/* THE FIX: Check if removing this item will empty their cart entirely */}
+                {cartItems.length === 1 && inventoryIssue.remainingQty === 0 ? (
+                  <button 
+                    onClick={() => fixCartHandler(true, '/')}
+                    style={{ width: '100%', padding: '10px', background: '#d48806', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.95rem' }}
+                  >
+                    Remove Item & Return to Shop
+                  </button>
+                ) : (
+                  <>
+                    <button 
+                      onClick={() => fixCartHandler(false)}
+                      style={{ width: '100%', padding: '10px', background: '#d48806', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.95rem' }}
+                    >
+                      {inventoryIssue.remainingQty === 0 
+                        ? `Remove Item & Continue Checkout` 
+                        : `Update to ${inventoryIssue.remainingQty} Units & Continue Checkout`}
+                    </button>
+
+                    <button 
+                      onClick={() => fixCartHandler(true, '/cart')}
+                      style={{ width: '100%', padding: '10px', background: '#fff', color: '#d48806', border: '1px solid #d48806', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.95rem' }}
+                    >
+                      {inventoryIssue.remainingQty === 0 
+                        ? `Remove Item & Review Cart` 
+                        : `Update Units & Review Cart`}
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
