@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
@@ -16,6 +17,30 @@ const Header = () => {
   const resolveMerge = useCartStore((state) => state.resolveMerge);
 
   const greetingName = userInfo?.preferredFirstName || userInfo?.firstName;
+
+  // --- THE FIX: Cross-Tab Synchronization Listener for User AND Cart ---
+  useEffect(() => {
+    const syncState = (e) => {
+      // 1. Sync User Changes
+      if (e.key === 'userInfo') {
+        const updatedUser = e.newValue ? JSON.parse(e.newValue) : null;
+        useAuthStore.setState({ userInfo: updatedUser });
+        
+        if (!updatedUser) {
+           navigate('/login');
+        }
+      }
+      
+      // 2. Sync Cart Changes
+      if (e.key === 'cartItems') {
+        const updatedCart = e.newValue ? JSON.parse(e.newValue) : [];
+        useCartStore.setState({ cartItems: updatedCart });
+      }
+    };
+
+    window.addEventListener('storage', syncState);
+    return () => window.removeEventListener('storage', syncState);
+  }, [navigate]);
 
   const handleMergeDecision = async (acceptMerge) => {
     resolveMerge(acceptMerge);

@@ -22,7 +22,7 @@ const PlaceOrderScreen = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [inventoryIssue, setInventoryIssue] = useState(null); 
-  const [limitIssue, setLimitIssue] = useState(null); // NEW: Track compliance limits
+  const [limitIssue, setLimitIssue] = useState(null); 
 
   useEffect(() => {
     if (cartItems.length === 0) return;
@@ -50,6 +50,15 @@ const PlaceOrderScreen = () => {
   else if (shippingAddress.terrainType === 'Water') orderTypeDisplay = 'Water Delivery';
   else if (shippingAddress.terrainType === 'Land') orderTypeDisplay = 'Land Delivery';
 
+  // THE FIX: Safely parse the date string and get the day of the week
+  let formattedDeliveryDate = shippingAddress.deliveryDate;
+  if (shippingAddress.deliveryDate) {
+    const [year, month, day] = shippingAddress.deliveryDate.split('-');
+    const dateObj = new Date(year, month - 1, day);
+    const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+    formattedDeliveryDate = `${dayOfWeek}, ${shippingAddress.deliveryDate}`;
+  }
+
   const executeFinalOrder = async () => {
     try {
       setLoading(true);
@@ -72,7 +81,6 @@ const PlaceOrderScreen = () => {
         setInventoryIssue(err.response.data);
         toast.warning('Cart update required to proceed.');
       } else if (err.response?.data?.errorType === 'DAILY_LIMIT_EXCEEDED') {
-        // THE FIX: Catch the new backend compliance error
         setLimitIssue(err.response.data.message);
         toast.error('Legal limits exceeded for today.');
       } else {
@@ -114,7 +122,6 @@ const PlaceOrderScreen = () => {
 
       <div className="place-order-grid">
         
-        {/* LEFT COLUMN: Review Info */}
         <div className="order-details-col">
           <div style={{ paddingBottom: '15px', borderBottom: '1px solid #eee', marginBottom: '15px' }}>
             <h2 style={{ margin: '0 0 10px 0', fontSize: '1.3rem' }}>Order Details</h2>
@@ -133,9 +140,10 @@ const PlaceOrderScreen = () => {
               }
             </p>
             
+            {/* THE FIX: Outputting the newly formatted date with day of the week */}
             {!isPickup && shippingAddress.deliveryDate && (
               <p style={{ margin: '8px 0 0 0', color: '#1890ff', fontWeight: 'bold', fontSize: '0.95rem' }}>
-                Delivery Window: {shippingAddress.deliveryTimeSlot} on {shippingAddress.deliveryDate}
+                Delivery Window: {shippingAddress.deliveryTimeSlot} on {formattedDeliveryDate}
               </p>
             )}
           </div>
@@ -166,13 +174,11 @@ const PlaceOrderScreen = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Order Summary */}
         <div className="order-summary-col">
           <h2 style={{ marginTop: 0, marginBottom: '15px', borderBottom: '2px solid #ddd', paddingBottom: '10px', fontSize: '1.4rem' }}>Order Summary</h2>
           
           {error && !inventoryIssue && !limitIssue && <div style={{ background: '#ff4d4f', color: 'white', padding: '10px', borderRadius: '5px', marginBottom: '15px', fontSize: '0.9rem', fontWeight: 'bold' }}>{error}</div>}
 
-          {/* THE FIX: Render the Limit Exceeded Warning */}
           {limitIssue && (
              <div style={{ background: '#fff2f0', border: '1px solid #ffccc7', padding: '15px', borderRadius: '8px', marginBottom: '15px', animation: 'fadeIn 0.3s' }}>
               <h3 style={{ color: '#cf1322', margin: '0 0 8px 0', fontSize: '1.05rem' }}>🛑 Legal Limit Exceeded</h3>
