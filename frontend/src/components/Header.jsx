@@ -4,6 +4,7 @@ import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
 import axios from '../axios';
 import { toast } from 'react-toastify';
+import betaLogo from '../assets/northern_beta_logo.png';
 import '../styles/Header.css'; 
 
 const Header = () => {
@@ -67,7 +68,7 @@ const Header = () => {
         <Link to="/" className="header-logo-link">
           <div className="logo-section">
             <img 
-              src="/public/northern_beta_logo.png" 
+              src={betaLogo} 
               alt="Northern Legacy" 
               className="header-logo-img" 
             />
