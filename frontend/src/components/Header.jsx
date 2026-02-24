@@ -67,7 +67,7 @@ const Header = () => {
         <Link to="/" className="header-logo-link">
           <div className="logo-section">
             <img 
-              src="/northern_beta_logo.jpg" 
+              src="/public/northern_beta_logo.png" 
               alt="Northern Legacy" 
               className="header-logo-img" 
             />
