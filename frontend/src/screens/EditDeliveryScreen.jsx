@@ -30,8 +30,11 @@ const EditDeliveryScreen = () => {
   const [postalCode, setPostalCode] = useState('');
   const [terrainType, setTerrainType] = useState('Land');
   const [syncAddresses, setSyncAddresses] = useState(false);
+  
+  // THE FIX: Add Lat/Lng state
+  const [lat, setLat] = useState(null);
+  const [lng, setLng] = useState(null);
 
-  // NEW: State to track if they are actively modifying the address
   const [isNewSearch, setIsNewSearch] = useState(false);
 
   // Loading States
@@ -55,14 +58,13 @@ const EditDeliveryScreen = () => {
         const { data } = await axios.get('/api/users/profile');
         if (data.address && data.address.street) {
           
-          // THE FIX: Parse out the apartment number if it exists in the saved string
           let loadedStreet = data.address.street;
           let loadedApt = '';
           
           if (loadedStreet.includes(', ')) {
             const parts = loadedStreet.split(', ');
             loadedStreet = parts[0];
-            loadedApt = parts.slice(1).join(', '); // Joins any remaining parts back together
+            loadedApt = parts.slice(1).join(', '); 
           }
 
           setStreet(loadedStreet);
@@ -71,11 +73,14 @@ const EditDeliveryScreen = () => {
           setPostalCode(data.address.postalCode);
           setTerrainType(data.address.terrainType || 'Land');
           
+          // THE FIX: Hydrate lat/lng from the DB if they exist
+          setLat(data.address.lat || null);
+          setLng(data.address.lng || null);
+          
           setStatus('success');
           setMessage('Your current delivery address is verified and within range.');
           setInputValue(`${data.address.street}, ${data.address.city} ${data.address.postalCode}`);
           
-          // Ensure the box stays locked because this is an existing profile address
           setIsNewSearch(false);
         }
         setSyncAddresses(data.syncAddresses || false);
@@ -132,15 +137,18 @@ const EditDeliveryScreen = () => {
         setStatus('success');
         setMessage(`Address verified! You are ${distanceInMiles.toFixed(1)} miles away.`);
         setStreet(newStreet);
-        setAptNumber(''); // Clear the apt number on a fresh search
+        setAptNumber(''); 
         setCity(parsedCity);
         setPostalCode(parsedPostalCode);
         
-        // THE FIX: Unlock the apartment box!
+        // THE FIX: Save the coordinates into state!
+        setLat(customerCoords.lat);
+        setLng(customerCoords.lng);
+        
         setIsNewSearch(true);
       } else {
         setStatus('out-of-range');
-        setIsNewSearch(false); // Keep it locked
+        setIsNewSearch(false); 
         if (countryCode === 'CA') {
           setMessage(`You are ${distanceInMiles.toFixed(1)} miles away across the border in Canada! We currently only deliver within 25 miles of our Alexandria Bay store.`);
         } else {
@@ -158,8 +166,9 @@ const EditDeliveryScreen = () => {
       const finalSync = terrainType === 'Land' ? syncAddresses : false;
       const finalStreet = aptNumber ? `${street}, ${aptNumber}`.trim() : street;
       
+      // THE FIX: Inject lat and lng into the database payload
       const payload = {
-        address: { street: finalStreet, city, postalCode, terrainType },
+        address: { street: finalStreet, city, postalCode, terrainType, lat, lng },
         syncAddresses: finalSync,
       };
 
@@ -214,7 +223,7 @@ const EditDeliveryScreen = () => {
                   setInputValue(e.target.value);
                   if (status === 'success') {
                     setStatus(null);
-                    setIsNewSearch(false); // Lock the apartment box immediately if they tamper with the string
+                    setIsNewSearch(false);
                     setMessage('Please select a valid address from the dropdown to continue.');
                   }
                 }}
