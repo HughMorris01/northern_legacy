@@ -27,12 +27,14 @@ app.use(cookieParser()); // Allows Express to read the JWT in the cookies
 // CORS: Acts as the bouncer. 
 app.use(cors({
   origin: [
-    'http://localhost:3000', 
-    'http://localhost:5173', 
-    'https://northern-legacy.vercel.app' // 
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://northern-legacy.vercel.app',
+    'https://northernlegacyny.com',
+    'https://www.northernlegacyny.com'
   ],
   credentials: true, // <-- CRITICAL: Allows the secure JWT cookie to be sent
-})); // Prevents CORS errors when the frontend (port 5173 and Vercel) talks to the backend (port 5000)
+}));// Prevents CORS errors when the frontend (port 5173 and Vercel) talks to the backend (port 5000)
 app.use(helmet()); // Sets various HTTP headers for security
 app.use(morgan('dev')); // Logs all incoming requests to your terminal for debugging
 
