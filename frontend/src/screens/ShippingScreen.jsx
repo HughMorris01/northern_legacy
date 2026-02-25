@@ -337,7 +337,7 @@ const ShippingScreen = () => {
                           <input type="text" value={address} disabled style={{ width: '100%', padding: '8px', background: '#eaeaea', border: '1px solid #ccc', borderRadius: '4px', color: '#666', boxSizing: 'border-box' }} />
                         </div>
                         <div style={{ flex: '1' }}>
-                          <input type="text" value={aptNumber} onChange={(e) => setAptNumber(e.target.value)} placeholder="Apt 4B" style={{ width: '100%', padding: '8px', background: '#fff', border: '1px solid #1890ff', borderRadius: '4px', color: '#111', boxSizing: 'border-box' }} />
+                          <input type="text" value={aptNumber} onChange={(e) => setAptNumber(e.target.value)} placeholder="Unit/Apt (optional)" style={{ width: '100%', padding: '8px', background: '#fff', border: '1px solid #1890ff', borderRadius: '4px', color: '#111', boxSizing: 'border-box' }} />
                         </div>
                       </div>
                     )}

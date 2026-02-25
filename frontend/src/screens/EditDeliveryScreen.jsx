@@ -270,7 +270,7 @@ const EditDeliveryScreen = () => {
                   type="text" 
                   value={aptNumber} 
                   onChange={(e) => setAptNumber(e.target.value)} 
-                  placeholder="Apt 4B"
+                  placeholder="Unit/Apt (optional)"
                   disabled={!isNewSearch}
                   style={{ 
                     width: '100%', 
