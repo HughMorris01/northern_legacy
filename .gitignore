@@ -20,7 +20,14 @@ yarn-debug.log*
 yarn-error.log*
 logs/
 *.log
-*docx
+
+# Project Files
+*.zip
+*.doc
+*.docx
+*.pdf
+*.xlsx
+
 
 # OS Generated Files
 .DS_Store
