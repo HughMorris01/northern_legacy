@@ -42,6 +42,12 @@ app.get('/', (req, res) => {
   res.send('Northern Legacy API is online and compliant.');
 });
 
+
+// --- KEEP ALIVE HEALTH CHECK ---
+app.get('/api/health', (req, res) => {
+  res.status(200).send('Server is awake');
+});
+
 // Mount the routes to the /api/routes URL path
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes); 
@@ -58,3 +64,21 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
   console.log(`---`);
 });
+
+// --- INTERNAL KEEP-ALIVE CRON ---
+// Only run this in production so you aren't pinging localhost infinitely
+if (process.env.NODE_ENV === 'production') {
+  const RENDER_URL = 'https://northern-legacy.onrender.com/api/health'; // Replace with your actual Render URL
+  
+  // 9 minutes = 9 * 60 * 1000 = 540000 milliseconds
+  setInterval(async () => {
+    try {
+      const response = await fetch(RENDER_URL);
+      if (response.ok) {
+        console.log('Keep-alive ping successful');
+      }
+    } catch (error) {
+      console.error('Keep-alive ping failed:', error.message);
+    }
+  }, 540000); 
+}
