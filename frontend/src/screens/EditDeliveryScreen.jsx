@@ -128,10 +128,17 @@ const EditDeliveryScreen = () => {
         if (types.includes('country')) countryCode = comp.short_name; 
       });
 
+      // THE FIX: Strict validation ensuring a house number exists
+      if (!streetNumber) {
+        setStatus('error');
+        setIsNewSearch(false);
+        setMessage('Incomplete address. Please ensure you include a specific house or building number.');
+        return;
+      }
+
       const newStreet = `${streetNumber} ${route}`.trim();
       setInputValue(`${newStreet}, ${parsedCity} ${parsedPostalCode}`);
 
-      // THE FIX: Enforce the International Border block before checking distance
       if (countryCode !== 'US') {
         setStatus('out-of-range');
         setIsNewSearch(false);

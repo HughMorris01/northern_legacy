@@ -21,8 +21,11 @@ const PlaceOrderScreen = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // State handlers for specific checkout roadblocks
   const [inventoryIssue, setInventoryIssue] = useState(null); 
   const [limitIssue, setLimitIssue] = useState(null); 
+  const [deliveryIssue, setDeliveryIssue] = useState(null); // THE FIX: New Route Issue State
 
   useEffect(() => {
     if (cartItems.length === 0) return;
@@ -64,6 +67,7 @@ const PlaceOrderScreen = () => {
       setError('');
       setInventoryIssue(null);
       setLimitIssue(null);
+      setDeliveryIssue(null);
 
       const { data } = await axios.post('/api/orders', {
         orderItems: cartItems,
@@ -76,12 +80,18 @@ const PlaceOrderScreen = () => {
       navigate(`/order/${data._id}`); 
       
     } catch (err) {
-      if (err.response?.data?.errorType === 'INVENTORY_SHORTAGE' || err.response?.status === 409) {
+      const errorType = err.response?.data?.errorType;
+      
+      if (errorType === 'INVENTORY_SHORTAGE' || err.response?.status === 409 && !errorType) {
         setInventoryIssue(err.response.data);
         toast.warning('Cart update required to proceed.');
-      } else if (err.response?.data?.errorType === 'DAILY_LIMIT_EXCEEDED') {
+      } else if (errorType === 'DAILY_LIMIT_EXCEEDED') {
         setLimitIssue(err.response.data.message);
         toast.error('Legal limits exceeded for today.');
+      } else if (errorType === 'DELIVERY_UNAVAILABLE') {
+        // THE FIX: Catch the Anchor Race Condition and trigger the UI
+        setDeliveryIssue(err.response.data.message);
+        toast.error('Delivery route update required.');
       } else {
         setError(err.response?.data?.message || 'Failed to place order.');
       }
@@ -90,7 +100,6 @@ const PlaceOrderScreen = () => {
     }
   };
 
-  // THE FIX: Accept a redirectPath parameter to easily route them to '/' or '/cart'
   const fixCartHandler = (shouldRedirect = false, redirectPath = '/cart') => {
     if (inventoryIssue.remainingQty === 0) {
       removeFromCart(inventoryIssue.product._id);
@@ -107,6 +116,9 @@ const PlaceOrderScreen = () => {
       }, 50);
     }
   };
+
+  // Prevent checkout button from clicking if ANY issue is active
+  const isCheckoutDisabled = cartItems.length === 0 || loading || inventoryIssue || limitIssue || deliveryIssue;
 
   return (
     <div style={{ maxWidth: '1000px', margin: '20px auto 40px', padding: '0 15px', fontFamily: 'sans-serif' }}>
@@ -178,7 +190,21 @@ const PlaceOrderScreen = () => {
         <div className="order-summary-col">
           <h2 style={{ marginTop: 0, marginBottom: '15px', borderBottom: '2px solid #ddd', paddingBottom: '10px', fontSize: '1.4rem' }}>Order Summary</h2>
           
-          {error && !inventoryIssue && !limitIssue && <div style={{ background: '#ff4d4f', color: 'white', padding: '10px', borderRadius: '5px', marginBottom: '15px', fontSize: '0.9rem', fontWeight: 'bold' }}>{error}</div>}
+          {error && !inventoryIssue && !limitIssue && !deliveryIssue && <div style={{ background: '#ff4d4f', color: 'white', padding: '10px', borderRadius: '5px', marginBottom: '15px', fontSize: '0.9rem', fontWeight: 'bold' }}>{error}</div>}
+
+          {/* THE FIX: Render the Delivery Route Race Condition Error Block */}
+          {deliveryIssue && (
+            <div style={{ background: '#fff2f0', border: '1px solid #ffccc7', padding: '15px', borderRadius: '8px', marginBottom: '15px', animation: 'fadeIn 0.3s' }}>
+              <h3 style={{ color: '#cf1322', margin: '0 0 8px 0', fontSize: '1.05rem' }}>🚐 Route Update Required</h3>
+              <p style={{ margin: '0 0 12px 0', color: '#666', fontSize: '0.85rem', lineHeight: '1.4' }}>{deliveryIssue}</p>
+              <button 
+                onClick={() => navigate('/shipping')}
+                style={{ width: '100%', padding: '10px', background: '#cf1322', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.95rem' }}
+              >
+                Return to Shipping to Reschedule
+              </button>
+            </div>
+          )}
 
           {limitIssue && (
              <div style={{ background: '#fff2f0', border: '1px solid #ffccc7', padding: '15px', borderRadius: '8px', marginBottom: '15px', animation: 'fadeIn 0.3s' }}>
@@ -190,13 +216,12 @@ const PlaceOrderScreen = () => {
             </div>
           )}
 
-          {inventoryIssue && !limitIssue && (
+          {inventoryIssue && !limitIssue && !deliveryIssue && (
             <div style={{ background: '#fffbe6', border: '1px solid #ffe58f', padding: '15px', borderRadius: '8px', marginBottom: '15px', animation: 'fadeIn 0.3s' }}>
               <h3 style={{ color: '#d48806', margin: '0 0 8px 0', fontSize: '1.05rem' }}>⚠️ Cart Adjustment Needed</h3>
               <p style={{ margin: '0 0 12px 0', color: '#666', fontSize: '0.85rem', lineHeight: '1.4' }}>{inventoryIssue.message}</p>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {/* THE FIX: Check if removing this item will empty their cart entirely */}
                 {cartItems.length === 1 && inventoryIssue.remainingQty === 0 ? (
                   <button 
                     onClick={() => fixCartHandler(true, '/')}
@@ -261,12 +286,12 @@ const PlaceOrderScreen = () => {
 
             <button 
               onClick={executeFinalOrder}
-              disabled={cartItems.length === 0 || loading || inventoryIssue || limitIssue}
+              disabled={isCheckoutDisabled}
               style={{ 
                 width: '100%', padding: '15px', marginTop: '10px', 
-                background: (cartItems.length === 0 || loading || inventoryIssue || limitIssue) ? '#ccc' : 'black', 
+                background: isCheckoutDisabled ? '#ccc' : 'black', 
                 color: 'white', border: 'none', borderRadius: '5px', 
-                cursor: (cartItems.length === 0 || loading || inventoryIssue || limitIssue) ? 'not-allowed' : 'pointer', 
+                cursor: isCheckoutDisabled ? 'not-allowed' : 'pointer', 
                 fontSize: '1.1rem', fontWeight: 'bold', transition: 'background 0.3s'
               }}
             >

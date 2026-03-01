@@ -34,11 +34,17 @@ const orderSchema = new mongoose.Schema({
   
   // Physical routing details
   shippingAddress: {
-    address: { type: String, required: true },
-    city: { type: String, required: true },
-    postalCode: { type: String, required: true },
-    terrainType: { type: String, required: true, enum: ['Land', 'Water'] }
-  },
+      address: { type: String, required: true },
+      city: { type: String, required: true },
+      postalCode: { type: String, required: true },
+      terrainType: { type: String },
+      // THE FIX: Tell Mongoose to save these fields!
+      deliveryDate: { type: String },
+      deliveryTimeSlot: { type: String },
+      lat: { type: Number },
+      lng: { type: Number }
+    },
+    
   paymentMethod: { type: String, required: true },
   
   // Strict PRD Enums

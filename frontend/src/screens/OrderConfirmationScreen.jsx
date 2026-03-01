@@ -53,6 +53,15 @@ const OrderConfirmationScreen = () => {
     return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) + ' at 9:00 PM';
   };
 
+  // THE FIX: Safely parse the raw DB date string and add the day of the week
+  let formattedDeliveryDate = order.shippingAddress?.deliveryDate;
+  if (formattedDeliveryDate) {
+    const [year, month, day] = formattedDeliveryDate.split('-');
+    const dateObj = new Date(year, month - 1, day);
+    const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+    formattedDeliveryDate = `${dayOfWeek}, ${order.shippingAddress.deliveryDate}`;
+  }
+
   return (
     <div style={{ maxWidth: '1000px', margin: '20px auto 40px', padding: '0 15px', fontFamily: 'sans-serif' }}>
       
@@ -61,7 +70,6 @@ const OrderConfirmationScreen = () => {
         Order Confirmation
       </h1>
 
-      {/* THE FIX: CSS injected to handle responsive re-ordering of the QR code */}
       <style>{`
         .confirmation-grid {
           display: flex;
@@ -69,7 +77,7 @@ const OrderConfirmationScreen = () => {
           gap: 20px;
         }
         .token-col {
-          order: -1; /* Rips the QR Code to the VERY TOP on mobile! */
+          order: -1; 
         }
         .info-col {
           order: 1;
@@ -82,7 +90,7 @@ const OrderConfirmationScreen = () => {
             align-items: start;
           }
           .token-col {
-            order: 2; /* Puts it back on the right side for desktop */
+            order: 2; 
             position: sticky;
             top: 20px;
           }
@@ -91,7 +99,7 @@ const OrderConfirmationScreen = () => {
 
       <div className="confirmation-grid">
         
-        {/* LEFT COLUMN: Details & Fulfillment (Rendered second on mobile) */}
+        {/* LEFT COLUMN: Details & Fulfillment */}
         <div className="info-col" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
           {/* SECTION 1: ORDER DETAILS */}
@@ -148,10 +156,10 @@ const OrderConfirmationScreen = () => {
               }
             </p>
 
-            {/* THE FIX: Replaced the hardcoded text with the dynamic database payload! */}
+            {/* THE FIX: Utilizing the newly formatted string with the Day of the Week */}
             {isDelivery && order.shippingAddress?.deliveryDate && (
               <p style={{ margin: '8px 0', color: '#1890ff', fontWeight: 'bold', fontSize: '0.95rem' }}>
-                Delivery Window: {order.shippingAddress.deliveryTimeSlot} on {order.shippingAddress.deliveryDate}
+                Delivery Window: {order.shippingAddress.deliveryTimeSlot} on {formattedDeliveryDate}
               </p>
             )}
 

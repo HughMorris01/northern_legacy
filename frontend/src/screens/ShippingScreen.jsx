@@ -45,7 +45,7 @@ const ShippingScreen = () => {
   // UI Flow State
   const [step, setStep] = useState(1); 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [expandedDays, setExpandedDays] = useState([0]); // Index 0 is open by default
+  const [expandedDays, setExpandedDays] = useState([0]); 
 
   // Delivery Scheduling State
   const [deliverySlots, setDeliverySlots] = useState([]);
@@ -55,7 +55,7 @@ const ShippingScreen = () => {
   const fetchDeliverySlots = async (latitude, longitude) => {
     setSlotsLoading(true);
     setSelectedSlot(null); 
-    setExpandedDays([0]); // Reset accordion when new address loads
+    setExpandedDays([0]); 
     try {
       const { data } = await axios.post('/api/delivery/slots', { lat: latitude, lng: longitude });
       setDeliverySlots(data);
@@ -160,7 +160,7 @@ const ShippingScreen = () => {
       let route = '';
       let parsedCity = '';
       let parsedPostalCode = '';
-      let countryCode = ''; // NEW: Track the country
+      let countryCode = '';
 
       place.address_components?.forEach((comp) => {
         const types = comp.types;
@@ -168,13 +168,22 @@ const ShippingScreen = () => {
         if (types.includes('route')) route = comp.short_name;
         if (types.includes('locality') || types.includes('sublocality')) parsedCity = comp.long_name;
         if (types.includes('postal_code')) parsedPostalCode = comp.short_name;
-        if (types.includes('country')) countryCode = comp.short_name; // NEW: Extract the country code
+        if (types.includes('country')) countryCode = comp.short_name; 
       });
+
+      // THE FIX: Strict validation ensuring a house number exists
+      if (!streetNumber) {
+        setStatus('error');
+        setIsEligible(false);
+        setDeliverySlots([]);
+        setStep(1);
+        setMessage('Incomplete address. Please ensure you include a specific house or building number.');
+        return;
+      }
 
       const newStreet = `${streetNumber} ${route}`.trim();
       setInputValue(`${newStreet}, ${parsedCity} ${parsedPostalCode}`);
 
-      // THE FIX: Enforce the International Border block before checking distance
       if (countryCode !== 'US') {
         setStatus('out-of-range');
         setIsEligible(false);
@@ -225,7 +234,9 @@ const ShippingScreen = () => {
       postalCode, 
       terrainType,
       deliveryDate: selectedSlot.date,
-      deliveryTimeSlot: selectedSlot.time
+      deliveryTimeSlot: selectedSlot.time,
+      lat, 
+      lng 
     });
     
     setShowConfirmModal(false);
@@ -255,7 +266,6 @@ const ShippingScreen = () => {
       </div>
 
       <div style={{ background: '#fff', padding: '15px 20px 20px', borderRadius: '12px', border: '1px solid #eaeaea', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-        {/* --- THE FIX: STRICT 100% HORIZONTAL SLIDING WRAPPER --- */}
         <div style={{ overflow: 'hidden', width: '100%' }}>
           <div style={{ display: 'flex', width: '100%', transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)', transform: step === 1 ? 'translateX(0)' : 'translateX(-100%)', alignItems: 'flex-start' }}>
             
@@ -388,7 +398,6 @@ const ShippingScreen = () => {
             {/* ========================================= */}
             <div style={{ flex: '0 0 100%', paddingLeft: '2px', boxSizing: 'border-box' }}>
               
-              {/* THE FIX: "Edit Address" is now a clean Pill Button */}
               <button 
                 type="button" 
                 onClick={() => setStep(1)} 
@@ -418,9 +427,11 @@ const ShippingScreen = () => {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   
-                  {/* THE FIX: The dynamic accordion logic pushes the bottom buttons up! */}
                   {deliverySlots.map((dayObj, idx) => {
                     const isExpanded = expandedDays.includes(idx);
+                    // THE FIX: Filter out the unavailable slots completely
+                    const availableSlots = dayObj.slots.filter(s => s.status === 'Open' || s.status === 'Anchored');
+                    
                     return (
                       <div key={dayObj.date} style={{ border: '1px solid #ddd', borderRadius: '8px', overflow: 'hidden' }}>
                         
@@ -436,38 +447,43 @@ const ShippingScreen = () => {
                         
                         {isExpanded && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: '#eee' }}>
-                            {dayObj.slots.map((slot) => {
-                              const isAvailable = slot.status === 'Open' || slot.status === 'Anchored';
-                              const isSelected = selectedSlot?.date === dayObj.date && selectedSlot?.time === slot.time;
-                              
-                              return (
-                                <button
-                                  key={`${dayObj.date}-${slot.time}`}
-                                  type="button"
-                                  disabled={!isAvailable}
-                                  onClick={() => setSelectedSlot({ date: dayObj.date, time: slot.time })}
-                                  style={{
-                                    padding: '12px 15px', textAlign: 'left', cursor: isAvailable ? 'pointer' : 'not-allowed',
-                                    border: 'none', borderBottom: '1px solid #eee',
-                                    background: isSelected ? '#fffbe6' : isAvailable ? 'white' : '#fafafa',
-                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s',
-                                    width: '100%', boxSizing: 'border-box'
-                                  }}
-                                >
-                                  <div>
-                                    <span style={{ display: 'block', fontWeight: 'bold', color: isAvailable ? (isSelected ? '#d48806' : '#111') : '#999', fontSize: '0.95rem', marginBottom: '2px', textDecoration: !isAvailable ? 'line-through' : 'none' }}>
+                            {availableSlots.length > 0 ? (
+                              availableSlots.map((slot) => {
+                                const isSelected = selectedSlot?.date === dayObj.date && selectedSlot?.time === slot.time;
+                                
+                                return (
+                                  <button
+                                    key={`${dayObj.date}-${slot.time}`}
+                                    type="button"
+                                    // THE FIX: Toggle logic for deselection
+                                    onClick={() => {
+                                      if (isSelected) {
+                                        setSelectedSlot(null); 
+                                      } else {
+                                        setSelectedSlot({ date: dayObj.date, time: slot.time });
+                                      }
+                                    }}
+                                    style={{
+                                      padding: '15px', textAlign: 'left', cursor: 'pointer',
+                                      border: 'none', borderBottom: '1px solid #eee',
+                                      background: isSelected ? '#fffbe6' : 'white',
+                                      display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s',
+                                      width: '100%', boxSizing: 'border-box'
+                                    }}
+                                  >
+                                    <span style={{ display: 'block', fontWeight: 'bold', color: isSelected ? '#d48806' : '#111', fontSize: '0.95rem' }}>
                                       {slot.time}
                                     </span>
-                                    {!isAvailable && (
-                                      <span style={{ fontSize: '0.75rem', color: '#cf1322', fontWeight: 'bold' }}>
-                                        {slot.reason || slot.status}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {isSelected && <span style={{ color: '#d48806', fontWeight: 'bold', fontSize: '1.1rem' }}>✓</span>}
-                                </button>
-                              );
-                            })}
+                                    {isSelected && <span style={{ color: '#d48806', fontWeight: 'bold', fontSize: '1.1rem' }}>✓</span>}
+                                  </button>
+                                );
+                              })
+                            ) : (
+                              // THE FIX: Clean fallback if a day is fully booked
+                              <div style={{ padding: '15px', background: '#fafafa', color: '#999', fontStyle: 'italic', fontSize: '0.95rem', textAlign: 'center' }}>
+                                No windows available for this date.
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
