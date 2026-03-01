@@ -160,6 +160,7 @@ const ShippingScreen = () => {
       let route = '';
       let parsedCity = '';
       let parsedPostalCode = '';
+      let countryCode = ''; // NEW: Track the country
 
       place.address_components?.forEach((comp) => {
         const types = comp.types;
@@ -167,12 +168,20 @@ const ShippingScreen = () => {
         if (types.includes('route')) route = comp.short_name;
         if (types.includes('locality') || types.includes('sublocality')) parsedCity = comp.long_name;
         if (types.includes('postal_code')) parsedPostalCode = comp.short_name;
+        if (types.includes('country')) countryCode = comp.short_name; // NEW: Extract the country code
       });
 
       const newStreet = `${streetNumber} ${route}`.trim();
       setInputValue(`${newStreet}, ${parsedCity} ${parsedPostalCode}`);
 
-      if (distanceInMiles <= 30) {
+      // THE FIX: Enforce the International Border block before checking distance
+      if (countryCode !== 'US') {
+        setStatus('out-of-range');
+        setIsEligible(false);
+        setDeliverySlots([]);
+        setStep(1);
+        setMessage(`International Delivery Blocked: We cannot deliver across the border to Canada.`);
+      } else if (distanceInMiles <= 30) {
         setStatus('success');
         setMessage(`Address verified! You are ${distanceInMiles.toFixed(1)} miles away.`);
         setAddress(newStreet);
@@ -189,7 +198,7 @@ const ShippingScreen = () => {
         setIsEligible(false);
         setDeliverySlots([]);
         setStep(1);
-        setMessage(`You are ${distanceInMiles.toFixed(1)} miles away. We only deliver within 25 miles of Alexandria Bay.`);
+        setMessage(`You are ${distanceInMiles.toFixed(1)} miles away. We only deliver within 30 miles of Alexandria Bay.`);
       }
     }
   };

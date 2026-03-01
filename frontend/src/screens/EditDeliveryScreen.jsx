@@ -31,7 +31,6 @@ const EditDeliveryScreen = () => {
   const [terrainType, setTerrainType] = useState('Land');
   const [syncAddresses, setSyncAddresses] = useState(false);
   
-  // THE FIX: Add Lat/Lng state
   const [lat, setLat] = useState(null);
   const [lng, setLng] = useState(null);
 
@@ -73,7 +72,6 @@ const EditDeliveryScreen = () => {
           setPostalCode(data.address.postalCode);
           setTerrainType(data.address.terrainType || 'Land');
           
-          // THE FIX: Hydrate lat/lng from the DB if they exist
           setLat(data.address.lat || null);
           setLng(data.address.lng || null);
           
@@ -133,27 +131,25 @@ const EditDeliveryScreen = () => {
       const newStreet = `${streetNumber} ${route}`.trim();
       setInputValue(`${newStreet}, ${parsedCity} ${parsedPostalCode}`);
 
-      if (distanceInMiles <= 30) {
+      // THE FIX: Enforce the International Border block before checking distance
+      if (countryCode !== 'US') {
+        setStatus('out-of-range');
+        setIsNewSearch(false);
+        setMessage(`International Delivery Blocked: We cannot deliver across the border to Canada.`);
+      } else if (distanceInMiles <= 30) {
         setStatus('success');
         setMessage(`Address verified! You are ${distanceInMiles.toFixed(1)} miles away.`);
         setStreet(newStreet);
         setAptNumber(''); 
         setCity(parsedCity);
         setPostalCode(parsedPostalCode);
-        
-        // THE FIX: Save the coordinates into state!
         setLat(customerCoords.lat);
         setLng(customerCoords.lng);
-        
         setIsNewSearch(true);
       } else {
         setStatus('out-of-range');
         setIsNewSearch(false); 
-        if (countryCode === 'CA') {
-          setMessage(`You are ${distanceInMiles.toFixed(1)} miles away across the border in Canada! We currently only deliver within 25 miles of our Alexandria Bay store.`);
-        } else {
-          setMessage(`You are ${distanceInMiles.toFixed(1)} miles away! We currently only deliver within 25 miles of our Alexandria Bay store.`);
-        }
+        setMessage(`You are ${distanceInMiles.toFixed(1)} miles away! We currently only deliver within 30 miles of our Alexandria Bay store.`);
       }
     }
   };
@@ -166,7 +162,6 @@ const EditDeliveryScreen = () => {
       const finalSync = terrainType === 'Land' ? syncAddresses : false;
       const finalStreet = aptNumber ? `${street}, ${aptNumber}`.trim() : street;
       
-      // THE FIX: Inject lat and lng into the database payload
       const payload = {
         address: { street: finalStreet, city, postalCode, terrainType, lat, lng },
         syncAddresses: finalSync,
