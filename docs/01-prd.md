@@ -1,6 +1,6 @@
-**Project Name:** Northern Legacy E-Commerce Portal
-**Version:** 1.0
-**Status:** Approved for Development
+**Project Name:** Northern Legacy E-Commerce Portal  
+**Version:** 1.0  
+**Status:** Approved for Development  
 **Stakeholders:** Excelsior Genetics (Parent), Northern Legacy (Retail DBA)
 
 **1. Executive Summary**
