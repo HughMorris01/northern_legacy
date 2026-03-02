@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const users = require('./data/users');
-const products = require('./data/products');
+const users = require('./users');
+const products = require('./products');
 // const orders = require('./data/orders'); // Uncomment this when you create your dummy orders file
 
-const User = require('./models/User');
-const Product = require('./models/Product');
-const Order = require('./models/Order');
+const User = require('../models/User');
+const Product = require('../models/Product');
+const Order = require('../models/Order');
 
 // Load environment variables manually
 dotenv.config();

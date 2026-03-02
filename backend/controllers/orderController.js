@@ -16,6 +16,9 @@ const getDistanceFromLatLonInMiles = (lat1, lon1, lat2, lon2) => {
 };
 const deg2rad = (deg) => deg * (Math.PI / 180);
 
+// @desc    Create new order, enforce limits, deduct inventory, and plant route anchor
+// @route   POST /api/orders
+// @access  Private
 const addOrderItems = async (req, res) => {
   const { orderItems, shippingAddress, paymentMethod, totalAmount } = req.body;
 
@@ -173,6 +176,9 @@ const addOrderItems = async (req, res) => {
   res.status(201).json(createdOrder);
 };
 
+// @desc    Get order by ID
+// @route   GET /api/orders/:id
+// @access  Private
 const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate('customerId', 'firstName lastName email');
@@ -189,6 +195,9 @@ const getOrderById = async (req, res) => {
   }
 };
 
+// @desc    Get logged in user orders
+// @route   GET /api/orders/myorders
+// @access  Private
 const getMyOrders = async (req, res) => {
   try {
     const orders = await Order.find({ customerId: req.user._id }).sort({ orderPlacedAt: -1 });
