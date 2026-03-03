@@ -6,15 +6,15 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
     "data:import": "node ./data/seeder.js",
-    "data:products": "node seeder.js -p",
-    "data:users": "node seeder.js -u",
-    "data:orders": "node seeder.js -o",
-    "data:destroy": "node seeder.js -d"
+    "data:products": "node ./data/seeder.js -p",
+    "data:users": "node ./data/seeder.js -u",
+    "data:orders": "node ./data/seeder.js -o",
+    "data:destroy": "node ./data/seeder.js -d"
   },
   "keywords": [],
-  "author": "",
+  "author": "Greg Farrell",
   "license": "ISC",
-  "description": "",
+  "description": "Vertically Integrated E-commerce Application",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",

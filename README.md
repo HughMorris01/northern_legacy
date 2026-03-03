@@ -20,6 +20,7 @@
 - [Tech Stack & Architecture](#%EF%B8%8F-tech-stack--architecture)
 - [Getting Started](#-getting-started)
 - [Environment Variables](#-environment-variables)
+- [Database Seeding](#-database-seeding)
 - [Testing & QA](#-testing--qa)
 - [Project Documentation](#-project-documentation)
 - [License & Confidentiality](#%EF%B8%8F-license--confidentiality)
@@ -48,14 +49,17 @@ Built to handle the extreme geographic complexity of the St. Lawrence River bord
 
 ## 🛣️ Development Roadmap 
 
-Development is structured across strategic phases to systematically roll out critical operational pillars:
+Development is structured across strategic phases to systematically roll out critical operational pillars. The foundational platform is currently live, with advanced logistics and administrative features actively in development:
 
+### ✅ Completed & Live
+* **Phase 1: Foundation & Mainland Logistics:** Core MERN platform build, dynamic Zustand cart logic, biometric compliance gating, and implementation of the Haversine "Dynamic Anchor" algorithm for land-based delivery routing.
+
+### ⏳ In Development / Upcoming
 * **Phase 2: State Compliance (Metrc):** Automated, bi-directional API integration with the NYS Metrc system for real-time outbound sales reporting and incoming wholesale manifest screening.
 * **Phase 3: Dispatch & Administration:** Rollout of the **Admin Dashboard** allowing management to view active orders, manage inventory, and visualize delivery routes.
 * **Phase 4: In-Store Retail:** Implementation of the **Budtender Portal / POS**, connecting physical storefront sales directly to the centralized inventory and compliance engine.
 * **Phase 5: Maritime Expansion:** Integration of **Maritime (Water) Delivery**, enabling dockside drops via Google Plus Codes and dynamic anchor mapping logic.
 * **Phase 6: Fleet Operations:** Deployment of the **Offline-First Driver PWA** allowing delivery staff to perform dual-scan handoffs and record GPS telematics offline.
-
 ---
 
 ## 🛠️ Tech Stack & Architecture
@@ -65,7 +69,7 @@ Development is structured across strategic phases to systematically roll out cri
 * Vite (Build Tooling)
 * Zustand (Global State Management)
 * React Router DOM
-* Tailwind CSS
+* Standard CSS & Dynamic Inline Styles
 * Google Maps API (Autocomplete & Spherical Geometry)
 
 **Backend & Database:**
@@ -133,6 +137,26 @@ VITE_GOOGLE_CLIENT_ID=your_google_oauth_client_id
 
 ---
 
+## 🌱 Database Seeding
+
+To quickly populate your local MongoDB database with mock data for testing, you can run the included seeder scripts. Ensure your `.env` file is properly configured with your `MONGO_URI` before executing.
+
+**From the `/backend` directory:**
+```bash
+# Import all dummy data (Users, Products, Orders)
+npm run data:import
+
+# Destroy all data (Clear the database)
+npm run data:destroy
+```
+
+**Targeted Seeding Commands:**
+* `npm run data:users` - Imports only mock users
+* `npm run data:products` - Imports only mock products
+* `npm run data:orders` - Imports only mock orders
+
+---
+
 ## 🧪 Testing & QA
 
 Quality assurance is strictly integrated into the development lifecycle. 
@@ -159,7 +183,7 @@ This project follows a strict Software Development Life Cycle (SDLC) tailored fo
 ## 📞 Contact
 
 **Greg Farrell** - Lead Full-Stack Engineer  
-📧 **Email:** [greg@exgenetics.com](mailto:greg@exgenetics.com)  
+📧 **Email:** [greg.farrell82@gmail.com](mailto:greg.farrell82@gmail.com)  
 📱 **Phone:** (585) 439-8235  
 🔗 **LinkedIn:** [linkedin.com/in/gregory-farrell](https://www.linkedin.com/in/gregory-farrell)
 
